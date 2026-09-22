@@ -2,17 +2,17 @@
 
 ## Objetivo
 
-Verificar desde ROS 2 el acceso real a sensores, actuadores y servicios de NAO y Pepper, identificar los adaptadores disponibles y registrar limitaciones antes de integrarlos como proveedores de capacidades. En ambas plataformas se comprobaron publicaciones de sensores seleccionados y voz; la cadena Capabilities2 con el contrato común `Speak` se validó físicamente en los dos robots.
+Verificar desde ROS 2 el acceso real a sensores, actuadores y servicios de NAO y Pepper, identificar los adaptadores disponibles y registrar limitaciones antes de integrarlos como proveedores de capacidades. En ambas plataformas se comprobaron publicaciones de sensores seleccionados y voz; la cadena Capabilities2 con el contrato común `Speak` se validó físicamente en los dos robots. También se verificó detección directa de personas con `yolo_ros` sobre la cámara de NAO y se implementó su primer adaptador portable, validado todavía con mensajes simulados.
 
 ## Entorno comprobado
 
-- Fechas: 16 y 17 de septiembre de 2026.
+- Fechas: 16, 17 y 22 de septiembre de 2026.
 - Computador del laboratorio: Ubuntu 24.04.2, arquitectura x86_64 y ROS 2 Jazzy.
 - Middleware: Cyclone DDS, descubrimiento `SUBNET`.
-- Workspace usado: `~/Documents/naoqi/naoqi_ws`.
+- Workspaces usados: `~/Documents/naoqi/naoqi_ws` y `~/Documents/portable_hri_ws`.
 - Robots comprobados: NAO V6.0 con NAOqi 2.8.6.23 y Pepper; la versión de NAOqi de Pepper no se registró en esta prueba.
 - La IP y los identificadores físicos del robot se omiten de esta nota.
-- Capabilities2 no intervino en la adquisición inicial de sensores ni en la primera llamada directa de voz. Posteriormente se ejecutó una segunda prueba integral con Capabilities2 y el proveedor `NaoSpeak`, registrada más adelante.
+- Capabilities2 no intervino en la adquisición inicial de sensores, la primera llamada directa de voz ni la prueba inicial de `yolo_ros`. Posteriormente se ejecutaron pruebas con `NaoSpeak` y con el nuevo adaptador `YoloDetectPeople`, registradas más adelante.
 
 ## Arquitectura portable propuesta
 
@@ -24,48 +24,55 @@ En consecuencia, “enviar la misma instrucción a otro robot” significa conse
 
 | Elemento | Significado en la arquitectura | Implementación disponible actualmente | Posible evolución |
 | --- | --- | --- | --- |
-| Aplicación | Componente que decide **qué** quiere hacer y solicita una capacidad sin conocer la API particular del robot | Existe una primera aplicación Python en `hri_reference_app`: una máquina YASMIN que solicita `Speak` y libera la capacidad en éxito o error. Los scripts físicos y simulados anteriores se conservan como probes de diagnóstico | Ampliar la máquina YASMIN para combinar diálogo, percepción y movimiento |
-| Contrato común | Interfaz estable que todas las implementaciones de una misma capacidad deben cumplir | Existe un solo contrato propio: `hri_capability_interfaces/srv/Speak`, expuesto como `/hri/speak`. Recibe `text` y `language`; responde `success`, `provider` y `message` | Contratos diferentes para `Transcribe`, `DetectPerson`, `Navigate`, `DetectObstacle` o `ExecuteGesture` |
-| Capabilities2 | Gestor que registra los contratos y proveedores, activa el proveedor seleccionado y lo libera cuando deja de usarse | El `launch` de la aplicación inicia el servidor, carga las especificaciones instaladas, establece el vínculo, solicita `NaoSpeak` y lo libera | Mantener varios proveedores registrados y escogerlos mediante configuración |
-| Proveedor | Adaptador concreto que **implementa un contrato común** usando una tecnología o plataforma determinada | Existe un solo proveedor propio: `hri_naoqi_providers/NaoSpeak`. Atiende `/hri/speak` y llama `/nao/say` con voz no animada y síncrona | Otro proveedor de `Speak` para Pepper, Piper u otra salida de voz; todavía no está implementado |
-| Servicio o driver específico | Mecanismo no portable al que delega el proveedor; no es una capa adicional que la aplicación deba conocer | `/nao/say` y `/pepper/say` del módulo SinfonIA producen la voz física. El destino se seleccionó mediante remapeo ROS 2 en la prueba de Pepper | Convertir la selección del destino en configuración explícita y registrar un proveedor con identidad propia para Pepper |
-| Robot | Plataforma física que finalmente ejecuta la capacidad | NAO y Pepper completaron el recorrido mediante Capabilities2. En Pepper se reutilizó temporalmente `NaoSpeakRunner` mediante remapeo | Sustituir el remapeo diagnóstico por un proveedor Pepper explícito sin modificar la aplicación |
+| Aplicación | Componente que decide **qué** quiere hacer y solicita una capacidad sin conocer la API particular del robot | Existe una máquina YASMIN que solicita `Speak`. Los probes validan `Speak` y `DetectPeople` de forma aislada; todavía no existe la máquina combinada | Implementar `esperar persona → saludar` sin introducir nombres de YOLO ni del robot |
+| Contrato común | Interfaz estable que todas las implementaciones de una misma capacidad deben cumplir | Existen `Speak` en `/hri/speak` y `DetectPeople` en `/hri/detect_people`. El segundo devuelve confianza, identificador opcional y cuadro 2D sin exponer `yolo_msgs` | Contratos para `Transcribe`, `Navigate`, `DetectObstacle` o `ExecuteGesture` |
+| Capabilities2 | Gestor que registra los contratos y proveedores, activa el proveedor seleccionado y lo libera cuando deja de usarse | Administró `NaoSpeak` en pruebas físicas y `YoloDetectPeople` en una prueba integral simulada de doce comprobaciones | Seleccionar proveedores alternativos de cada contrato mediante configuración |
+| Proveedor | Adaptador concreto que **implementa un contrato común** usando una tecnología o plataforma determinada | Existen `hri_naoqi_providers/NaoSpeak` y `hri_yolo_providers/YoloDetectPeople`. El segundo se compiló y probó contra un flujo YOLO simulado; su repetición física está pendiente | Proveedores alternativos de voz o percepción sin cambiar la aplicación |
+| Servicio, tópico o driver específico | Mecanismo no portable al que delega el proveedor; no es una capa adicional que la aplicación deba conocer | `/nao/say` y `/pepper/say` producen voz; `/yolo/detections` entrega las detecciones calculadas desde la cámara seleccionada | Parametrizar formalmente destinos de voz, cámara y modelos |
+| Robot | Plataforma física que finalmente ejecuta o alimenta la capacidad | NAO y Pepper completaron `Speak` mediante Capabilities2. NAO alimentó directamente `yolo_ros`; aún falta repetir esa ruta mediante `YoloDetectPeople` | Validar el mismo contrato visual con Pepper cambiando la cámara de entrada |
 
 ```mermaid
 flowchart LR
-    APP["Aplicación actual en Python<br/>máquina YASMIN Speak"]
+    SPEAKAPP["Aplicación YASMIN actual<br/>Speak"]
+    DETECTPROBE["Probe actual<br/>DetectPeople"]
     C2["Capabilities2<br/>registro, selección y ciclo de vida"]
-    API["Único contrato actual<br/>Speak mediante /hri/speak"]
-
-    NAOP["Único proveedor actual<br/>NaoSpeak"]
+    SPEAKAPI["Contrato Speak<br/>/hri/speak"]
+    DETECTAPI["Contrato DetectPeople<br/>/hri/detect_people"]
+    NAOP["Proveedor NaoSpeak"]
+    YOLOP["Proveedor YoloDetectPeople"]
     TARGET{"Remapeo de servicio<br/>según robot"}
-    NAOS["Servicio específico<br/>/nao/say"]
-    PEPPERS["Servicio específico<br/>/pepper/say"]
+    NAOS["/nao/say"]
+    PEPPERS["/pepper/say"]
+    YOLOSTREAM["/yolo/detections"]
+    YOLOROS["yolo_ros<br/>yolov8n en CPU"]
+    CAMERA["Cámara frontal NAO"]
     NAODRIVER["Driver SinfonIA<br/>NAOqi"]
     PEPPERDRIVER["Driver SinfonIA<br/>NAOqi"]
     NAO["Robot NAO"]
     PEPPER["Robot Pepper"]
+    FUTAPP["Siguiente aplicación YASMIN<br/>esperar persona y saludar"]
 
-    FUTAPP["Aplicación HRI futura<br/>diálogo, percepción y movimiento"]
-    FUTPROV["Proveedor Pepper explícito<br/>todavía no registrado"]
-
-    APP -->|"1. solicita la capacidad Speak"| C2
-    C2 -->|"2. selecciona e inicia"| NAOP
-    APP -->|"3. Speak texto e idioma"| API
-    API -->|"atendida por el proveedor activo"| NAOP
-    NAOP -->|"4. adapta la solicitud"| TARGET
+    SPEAKAPP --> C2
+    SPEAKAPP --> SPEAKAPI --> NAOP
+    C2 --> NAOP
+    NAOP --> TARGET
     TARGET -->|"ejecución NAO"| NAOS
     TARGET -->|"ejecución Pepper validada"| PEPPERS
     NAOS --> NAODRIVER --> NAO
     PEPPERS --> PEPPERDRIVER --> PEPPER
 
-    FUTAPP -.->|"usaría el mismo contrato"| C2
-    C2 -.->|"selección futura"| FUTPROV
-    API -.-> FUTPROV
-    FUTPROV -.-> PEPPERS
+    DETECTPROBE --> C2
+    DETECTPROBE --> DETECTAPI --> YOLOP
+    C2 --> YOLOP
+    CAMERA --> YOLOROS --> YOLOSTREAM
+    YOLOP -.->|"repetición física pendiente"| YOLOSTREAM
+
+    FUTAPP -.-> C2
+    FUTAPP -.-> SPEAKAPI
+    FUTAPP -.-> DETECTAPI
 ```
 
-Las flechas continuas representan el recorrido arquitectónico ya implementado. El contrato y el proveedor fueron validados físicamente con NAO y Pepper mediante el probe anterior; la nueva aplicación YASMIN recorrió esas mismas capas con servicios de robot simulados y aún requiere repetición física. En todos los casos, Capabilities2 administró el mismo proveedor `hri_naoqi_providers/NaoSpeak`; para Pepper, ROS 2 remapeó internamente `/nao/say` a `/pepper/say`. La aplicación siguió solicitando `/hri/speak`, por lo que no cambió su lógica. Las flechas discontinuas representan la evolución pendiente hacia una aplicación HRI con varias capacidades y un proveedor Pepper con nombre y configuración propios. Capabilities2 administra el proveedor, pero no reemplaza al driver ni transporta por sí mismo el texto hasta NAOqi.
+Las flechas continuas representan componentes o recorridos ya comprobados. `Speak` completó la cadena física con ambos robots. En percepción se aprobaron por separado cámara → `yolo_ros` → `/yolo/detections` con NAO y Capabilities2 → `YoloDetectPeople` con mensajes simulados. La flecha discontinua entre el proveedor y el flujo real marca la repetición física pendiente; las demás indican la futura aplicación que combinará ambos contratos. Capabilities2 administra los adaptadores, pero no sustituye al driver, al modelo YOLO ni a NAOqi.
 
 ### Responsabilidad de cada capa
 
@@ -77,9 +84,9 @@ Las flechas continuas representan el recorrido arquitectónico ya implementado. 
 | Proveedores o adaptadores | Implementan el contrato común y traducen hacia un servicio, tópico, acción o SDK específico | Decisiones de alto nivel de la aplicación |
 | Servicios y drivers específicos | Acceden a sensores, actuadores, NAOqi o algoritmos externos | Contrato portable consumido por la aplicación |
 
-Un **proveedor** no es el robot ni cualquier paquete ROS 2. Es la implementación concreta de una capacidad común. Actualmente solo existe el proveedor `hri_naoqi_providers/NaoSpeak`, que implementa `Speak` usando el nombre interno `/nao/say`; su clase ejecutora es `NaoSpeakRunner`. Para la prueba diagnóstica con Pepper, ese nombre se remapeó a `/pepper/say`, por lo que no se creó un segundo proveedor. Un futuro proveedor de Piper podría implementar el mismo contrato usando `piper_ros`. En cambio, `whisper_ros` correspondería a otra capacidad, como `Transcribe` o `Listen`, no a `Speak`.
+Un **proveedor** no es el robot ni cualquier paquete ROS 2. Es la implementación concreta de una capacidad común. `hri_naoqi_providers/NaoSpeak` implementa `Speak` usando `/nao/say`; su clase ejecutora es `NaoSpeakRunner`. Para Pepper ese nombre se remapeó a `/pepper/say`, por lo que no se creó otro proveedor de voz. `hri_yolo_providers/YoloDetectPeople` implementa `DetectPeople`: conserva el último `DetectionArray` reciente, filtra la clase `person` y traduce confianza y cuadro 2D al contrato propio. `yolo_ros` es su motor externo, no el proveedor mismo. De forma análoga, Piper podría implementar `Speak`, mientras que `whisper_ros` correspondería a otra capacidad como `Transcribe` o `Listen`.
 
-### Primer incremento y evidencia inicial de portabilidad
+### Primer incremento de voz y evidencia inicial de portabilidad
 
 El primer incremento se limita a una capacidad común, ejecutada en dos plataformas físicas:
 
@@ -88,18 +95,18 @@ Aplicación → /hri/speak → proveedor NaoSpeak → /nao/say → SinfonIA/NAOq
                                             ↳ remapeo a /pepper/say → SinfonIA/NAOqi → Pepper
 ```
 
-El incremento comenzó con un script de prueba y ahora dispone de una primera máquina YASMIN. Ambas recorren las mismas capas con el caso mínimo `Speak`; la nueva aplicación agrega estados explícitos para establecer el vínculo, solicitar la capacidad, hablar y liberarla. La evidencia física registrada en esta nota corresponde al probe anterior, mientras que la aplicación YASMIN tiene por ahora evidencia simulada.
+El incremento comenzó con un script de prueba y ahora dispone de una primera máquina YASMIN. Ambas recorren las mismas capas con el caso mínimo `Speak`; la nueva aplicación agrega estados explícitos para establecer el vínculo, solicitar la capacidad, hablar y liberarla. Además de las pruebas simuladas, la aplicación YASMIN completó físicamente el recorrido con Pepper. La ejecución física equivalente de esta aplicación en NAO todavía no se ha registrado.
 
 La ejecución aprobada en Pepper aporta una primera evidencia de portabilidad: se conservó la misma aplicación, el contrato `/hri/speak` y el proveedor administrado por Capabilities2; solo se configuró el destino del servicio mediante remapeo. Esto demuestra reutilización cuando dos plataformas exponen servicios compatibles. No constituye todavía el diseño final para varias plataformas, porque el resultado continúa identificando al proveedor como `NaoSpeak`. La siguiente mejora consiste en registrar un proveedor Pepper explícito o parametrizar formalmente el proveedor compartido, sin cambiar la lógica de la aplicación.
 
 El mismo patrón puede extenderse a las demás familias caracterizadas en la semana 6:
 
 - `Transcribe` o `Listen`: proveedor basado en `whisper_ros` y una adaptación del audio del robot.
-- `DetectPerson`: proveedor basado en MediaPipe o YOLO, con una representación común de las detecciones.
+- `DetectPeople`: primer proveedor basado en YOLO implementado con una representación común; falta validarlo físicamente y evaluar MediaPipe como alternativa.
 - `ExecuteGesture`: proveedor basado en primitivas NAOqi o, si resulta viable, planificación y control mediante MoveIt 2.
 - `Navigate` y `DetectObstacle`: proveedores que encapsulen las diferencias de sensores, locomoción y servicios de cada plataforma.
 
-Estas extensiones siguen siendo propuestas hasta implementar sus contratos, proveedores y pruebas. Los cortes de voz con NAO y Pepper validan primero el mecanismo arquitectónico con un caso pequeño y observable.
+Salvo `DetectPeople`, estas extensiones siguen siendo propuestas hasta implementar sus contratos, proveedores y pruebas. Los cortes de voz con NAO y Pepper y la prueba visual directa con NAO validan el mecanismo con casos pequeños y observables, manteniendo explícito qué recorridos todavía son simulados.
 
 ## Primera aplicación portable con YASMIN
 
@@ -120,17 +127,17 @@ La verificación local en Docker con ROS 2 Jazzy y YASMIN 6.1.1 produjo estos re
 | Servicio `/pepper/say` simulado | Misma aplicación y proveedor, mensaje `mock_pepper_spoken`, liberación `true` |
 | Servicio del robot ausente | `application_failed`, mensaje `nao_say_unavailable`, liberación `true` |
 | Plataforma no soportada | El `launch` rechazó el valor antes de iniciar los nodos |
+| Pepper físico | El robot pronunció la frase, la aplicación terminó correctamente y liberó la capacidad |
 
 Los servicios simulados confirmaron que el proveedor recibió texto e idioma y tradujo la solicitud con `animated=false` y `asynchronous=false`. También se compiló el paquete con `colcon`, se validó la sintaxis Python y se construyó el entorno Docker versionado. `colcon test` no encontró pruebas registradas en el paquete; por tanto, la evidencia funcional procede de las ejecuciones integrales descritas y queda pendiente automatizarlas como suite.
 
-La siguiente comprobación en el laboratorio consiste en arrancar el driver correspondiente y ejecutar:
+La ejecución física con Pepper se repitió después de instalar YASMIN en el computador del laboratorio. La primera ejecución había terminado antes de iniciar la máquina de estados con `ModuleNotFoundError: No module named 'yasmin'`; una vez instalada la dependencia en el mismo entorno ROS 2, el mismo comando completó el flujo y Pepper pronunció la frase. Para cerrar la equivalencia de la aplicación falta repetir con NAO:
 
 ```bash
 ros2 launch hri_reference_app speak_demo.launch.py robot:=nao
-ros2 launch hri_reference_app speak_demo.launch.py robot:=pepper
 ```
 
-Esta repetición física permitirá sustituir la evidencia simulada de la aplicación YASMIN sin confundirla con las pruebas físicas ya aprobadas del contrato y el proveedor.
+Esta repetición no es necesaria para demostrar que el contrato `Speak` y el proveedor funcionan con NAO —eso ya se validó con el probe físico—, sino para documentar también la máquina YASMIN completa en esa plataforma.
 
 ## Arranque
 
@@ -185,6 +192,38 @@ Los siguientes resultados fueron observados con el robot físico conectado:
 | Sonar derecho | Mensaje recibido; 0,26 m con mínimo declarado de 0,25 m |
 
 La lectura izquierda está fuera del intervalo declarado por el propio mensaje y debe tratarse como inválida o fuera de rango hasta revisar la convención del driver. Estas dos muestras no demuestran detección ni evitación de obstáculos. La frecuencia observada de la cámara fue menor que la configuración documental nominal; se registra como diferencia por investigar, no como fallo demostrado.
+
+## Detección directa de personas con `yolo_ros` en NAO
+
+El 22 de septiembre se añadió `yolo_ros` al workspace, se creó el entorno `uv` recomendado por el proyecto y se compilaron `yolo_msgs`, `yolo_ros` y `yolo_bringup`. El computador no tenía disponible `nvidia-smi`, por lo que la primera prueba se configuró explícitamente sobre CPU con `yolov8n.pt`, sin tracking, profundidad ni modelos de pose o segmentación:
+
+```bash
+ros2 launch yolo_bringup yolo.launch.py model:=yolov8n.pt device:=cpu input_image_topic:=/nao/camera/front/image_raw use_tracking:=False use_3d:=False use_debug:=True
+```
+
+Se confirmó que `/yolo/yolo_node` y `/yolo/debug_node` estaban suscritos a `/nao/camera/front/image_raw` con QoS fiable. El driver principal se detuvo una vez durante la preparación; en ese estado el tópico conservaba dos suscriptores pero cero publicadores y no se produjeron detecciones. Después de reiniciar limpiamente el *bringup*, el grafo mostró un publicador y dos suscriptores.
+
+| Evidencia | Resultado observado |
+| --- | --- |
+| Cámara frontal con YOLO activo | Aproximadamente 4,0 Hz |
+| `/yolo/detections` sobre CPU | Aproximadamente 3,1 Hz |
+| Persona visible | Clase `person`, confianza 0,91 y cuadro 2D |
+| Cámara cubierta | Arreglo de detecciones vacío |
+| Persona visible nuevamente | Clase `person`, confianza 0,93 y nuevo cuadro 2D |
+
+Los campos de tracking, caja 3D, máscara y puntos corporales permanecieron vacíos, como corresponde a la configuración usada. La alternancia persona → cámara cubierta → persona aporta un control negativo y confirma que no se registró únicamente un mensaje residual. Queda aprobada la cadena directa:
+
+```text
+cámara frontal de NAO → driver ROS 2 → yolo_ros → /yolo/detections
+```
+
+## Contrato `DetectPeople` y proveedor `YoloDetectPeople`
+
+Después de la prueba directa se creó el contrato `hri_capability_interfaces/DetectPeople`. La solicitud recibe confianza mínima y edad máxima aceptada; la respuesta distingue un frame reciente sin personas de datos ausentes o vencidos. Las detecciones devuelven confianza, identificador opcional y cuadro 2D en píxeles sin exponer `yolo_msgs` a la aplicación.
+
+El proveedor `hri_yolo_providers/YoloDetectPeople` es un adaptador C++ cargado por `pluginlib`. Capabilities2 administra su servicio `/hri/detect_people` y su suscripción a `/yolo/detections`; la inferencia continúa en `yolo_ros`, que es un proceso Python externo. La biblioteca compiló sin símbolos dinámicos pendientes.
+
+La prueba local sin robot pasó doce comprobaciones: catálogo, selección, ausencia inicial, suscripción al flujo YOLO, traducción de una persona, exclusión de una silla, de una persona bajo el umbral y de geometría inválida, umbral del llamador, rechazo de umbral fuera de rango y valores no finitos, frame vacío, frame vencido y liberación. Al liberar la capacidad, el estado de Capabilities2 quedó vacío y la cantidad de suscriptores del proveedor volvió a cero. Esta evidencia aprueba el adaptador contra mensajes simulados; todavía falta repetir la cadena completa usando el flujo físico de NAO o Pepper.
 
 ## Interfaces y datos comprobados en Pepper
 
@@ -318,19 +357,19 @@ Esta prueba demuestra que la aplicación no necesitó conocer `/pepper/say` ni c
 ## Incidencias y límites
 
 - Durante el inicio apareció una vez `Could not compute NAO Footprint: no transform is possible`. El sistema continuó y quedó listo, pero la causa y su impacto en navegación están pendientes.
-- No se inspeccionó visualmente el contenido de las imágenes; se comprobó recepción y frecuencia.
+- No se realizó una evaluación cualitativa sistemática de las imágenes. La prueba YOLO sí comprobó semánticamente presencia y ausencia de una persona mediante detecciones 2D.
 - No se evaluaron calidad/formato del audio, exactitud de odometría o calibración de sensores.
 - No se enviaron órdenes deliberadas de locomoción o trayectorias. La postura `Stand` fue parte automática del *bringup*.
 - MoveIt 2 está instalado en el computador, pero no se observó una acción `FollowJointTrajectory` en los grafos inspeccionados; su integración con los tópicos de trayectoria no está demostrada.
-- MediaPipe no estuvo activo. Capabilities2 solo intervino en la prueba integral de voz descrita arriba, no en la caracterización de sensores.
+- MediaPipe no estuvo activo. Capabilities2 intervino en las pruebas integrales de voz y en la prueba simulada de `YoloDetectPeople`, no en la adquisición directa inicial.
 - Durante dos solicitudes de voz de Pepper, `naoqi_speech_node` detectó una sesión NAOqi desconectada y se reconectó automáticamente. Las solicitudes finalizaron, pero la intermitencia debe vigilarse en pruebas prolongadas.
 - `web_video_server` recibió solicitudes HTTP ajenas al flujo normal de la prueba y compatibles con exploración automatizada de red. No demuestran una intrusión, pero conviene iniciar Pepper con `launch_video_server:=false` cuando no se requiera transmisión web.
 - NAO tenía 21 % de batería durante su prueba; no corresponde ejecutar movimiento con esa medición sin cargarlo. Pepper registró 79 %.
 
 ## Resultado y continuación
 
-**Resultado aprobado para el bloque básico de acceso en NAO y Pepper:** en ambos robots se comprobaron el grafo ROS 2, publicaciones de sensores seleccionados, consultas de estado y voz real tanto directa como mediante el contrato portable cuando correspondía. Pepper añadió evidencia de cámaras frontal, inferior y de profundidad, micrófono, odometría, láser y sonares. La semana 7 no queda cerrada en su totalidad: faltan inspeccionar el contenido y la calidad de imagen/audio, validar exactitud y calibración, y evaluar de manera supervisada controladores y actuadores de movimiento.
+**Resultado aprobado para el bloque básico de acceso en NAO y Pepper:** en ambos robots se comprobaron el grafo ROS 2, publicaciones de sensores seleccionados, consultas de estado y voz real tanto directa como mediante el contrato portable cuando correspondía. Pepper añadió evidencia de cámaras frontal, inferior y de profundidad, micrófono, odometría, láser y sonares. NAO añadió una prueba directa de detección de personas con `yolo_ros`, incluido un control negativo al cubrir la cámara. La semana 7 no queda cerrada en su totalidad: faltan evaluar calidad y calibración, repetir físicamente `DetectPeople` mediante Capabilities2 y probar de manera supervisada controladores y actuadores de movimiento.
 
-El proveedor real `NaoSpeak` queda aprobado en tres escenarios: pasó 9/9 comprobaciones locales contra `/nao/say` simulado, 9/9 contra `/pepper/say` simulado mediante remapeo y las dos pruebas físicas supervisadas con NAO y Pepper. Además, la primera aplicación YASMIN completó las rutas simuladas para ambos robots y liberó la capacidad también ante ausencia del servicio. Esto cierra los recorridos Capabilities2 → proveedor → robot para `Speak` en ambas plataformas y deja pendiente únicamente la repetición física del nuevo orquestador YASMIN. También permanecen pendientes formalizar la identidad o parametrización del proveedor para Pepper, implementar las demás capacidades y resolver el fallo conocido de Capabilities2 al reportar un proveedor inexistente; este último no fue corregido ni reevaluado por las pruebas físicas.
+El proveedor real `NaoSpeak` queda aprobado en tres escenarios: pasó 9/9 comprobaciones locales contra `/nao/say` simulado, 9/9 contra `/pepper/say` simulado mediante remapeo y las dos pruebas físicas supervisadas con NAO y Pepper. Además, la primera aplicación YASMIN completó las rutas simuladas para ambos robots, liberó la capacidad también ante ausencia del servicio y completó la ejecución física con Pepper; falta registrar esa aplicación física con NAO. `YoloDetectPeople` pasó sus doce comprobaciones simuladas y liberó tanto servicio como suscripción, pero aún no se presenta como validado físicamente. Permanecen pendientes combinar `DetectPeople` y `Speak` en YASMIN, formalizar la identidad o parametrización del proveedor de voz para Pepper, implementar las demás capacidades y resolver el fallo conocido de Capabilities2 al reportar un proveedor inexistente.
 
-Revisión documental: la explicación completa de la arquitectura portable se trasladó desde la nota de semana 6 y se ubicó antes de las pruebas físicas, junto con sus definiciones, responsabilidades, diagrama, primer incremento y criterio de portabilidad. Los resultados de NAO y Pepper fueron transcritos de las salidas y confirmaciones suministradas por el autor, sin registrar IP ni identificadores físicos. La prueba de Pepper mediante Capabilities2 se presenta como aprobada por remapeo y se distingue expresamente de un futuro proveedor `PepperSpeak`. La aplicación actual se actualizó de probe a máquina YASMIN y su evidencia simulada se separó de la validación física todavía pendiente. No hay type-checker ni ESLint aplicable a esta actualización exclusivamente Markdown.
+Revisión documental: la explicación de arquitectura distingue ahora los dos contratos y proveedores existentes. Los resultados físicos de NAO y Pepper fueron transcritos de las salidas y confirmaciones suministradas por el autor, sin registrar IP ni identificadores físicos. La detección directa con YOLO, la prueba simulada del adaptador y la futura integración física se mantienen como tres niveles de evidencia separados. No hay type-checker ni ESLint aplicable a esta actualización exclusivamente Markdown.
