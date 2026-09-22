@@ -260,6 +260,22 @@ La lectura del sonar trasero debe interpretarse como fuera de rango o ausencia d
 
 Al inicio, una terminal podía descubrir el publicador de audio pero no resolver `audio_common_msgs`; con el entorno del workspace correctamente disponible, el paquete, su interfaz y los mensajes se resolvieron y el audio se midió a 11,65 Hz. Por tanto, la incidencia correspondió al entorno del cliente ROS 2 y no al micrófono ni a la desactivación de la vida autónoma.
 
+## Desplazamiento relativo básico en Pepper
+
+Se confirmó que `/pepper/cmd_vel` acepta `geometry_msgs/msg/Twist` para velocidad continua y que `/pepper/move_to` acepta `naoqi_utilities_msgs/srv/MoveTo` para un objetivo relativo. El servicio recibe `x_coordinate` y `y_coordinate` en metros y `theta_coordinate` en radianes. La implementación llama directamente a `ALMotion.moveTo(x, y, theta)`.
+
+Antes de mover el robot se restablecieron las protecciones predeterminadas mediante `/pepper/enable_default_security`, que respondió `success=True`. El primer intento no fue válido como medición: se enviaron dos solicitudes consecutivas de `0.1 m` mientras la vida autónoma estaba activa y Pepper terminó girando sobre su eje. La odometría mostró poco cambio de posición y un cambio grande de orientación. El robot se detuvo y no se continuó con esa configuración.
+
+Después de desactivar la vida autónoma se envió una sola solicitud supervisada:
+
+```bash
+ros2 service call /pepper/move_to naoqi_utilities_msgs/srv/MoveTo "{x_coordinate: 0.1, y_coordinate: 0.0, theta_coordinate: 0.0}"
+```
+
+Pepper avanzó aproximadamente diez centímetros y se detuvo. Este resultado valida el acceso físico directo al desplazamiento relativo bajo esa condición operativa. No aísla por sí solo la causa interna del primer giro, porque en aquel intento coexistieron vida autónoma activa y dos solicitudes consecutivas.
+
+`MoveTo.srv` tiene una respuesta vacía y el nodo actual descarta el booleano retornado por NAOqi; además captura las excepciones sin propagarlas al cliente. Por tanto, recibir `MoveTo_Response()` no demuestra que el objetivo se haya alcanzado. Las futuras pruebas deberán evitar solicitudes concurrentes, comprobar la vida autónoma antes de activar el proveedor, añadir exclusión mutua y verificar el resultado mediante odometría o una respuesta enriquecida.
+
 ## Prueba de voz mediante ROS 2
 
 Se confirmó primero que el idioma activo era `Spanish`:
@@ -359,7 +375,7 @@ Esta prueba demuestra que la aplicación no necesitó conocer `/pepper/say` ni c
 - Durante el inicio apareció una vez `Could not compute NAO Footprint: no transform is possible`. El sistema continuó y quedó listo, pero la causa y su impacto en navegación están pendientes.
 - No se realizó una evaluación cualitativa sistemática de las imágenes. La prueba YOLO sí comprobó semánticamente presencia y ausencia de una persona mediante detecciones 2D.
 - No se evaluaron calidad/formato del audio, exactitud de odometría o calibración de sensores.
-- No se enviaron órdenes deliberadas de locomoción o trayectorias. La postura `Stand` fue parte automática del *bringup*.
+- Se validó únicamente un desplazamiento relativo frontal de `0.1 m` en Pepper con vida autónoma desactivada. No se probaron desplazamiento lateral, rotación, trayectorias articulares ni locomoción en NAO.
 - MoveIt 2 está instalado en el computador, pero no se observó una acción `FollowJointTrajectory` en los grafos inspeccionados; su integración con los tópicos de trayectoria no está demostrada.
 - MediaPipe no estuvo activo. Capabilities2 intervino en las pruebas integrales de voz y en la prueba simulada de `YoloDetectPeople`, no en la adquisición directa inicial.
 - Durante dos solicitudes de voz de Pepper, `naoqi_speech_node` detectó una sesión NAOqi desconectada y se reconectó automáticamente. Las solicitudes finalizaron, pero la intermitencia debe vigilarse en pruebas prolongadas.
@@ -368,7 +384,7 @@ Esta prueba demuestra que la aplicación no necesitó conocer `/pepper/say` ni c
 
 ## Resultado y continuación
 
-**Resultado aprobado para el bloque básico de acceso en NAO y Pepper:** en ambos robots se comprobaron el grafo ROS 2, publicaciones de sensores seleccionados, consultas de estado y voz real tanto directa como mediante el contrato portable cuando correspondía. Pepper añadió evidencia de cámaras frontal, inferior y de profundidad, micrófono, odometría, láser y sonares. NAO añadió una prueba directa de detección de personas con `yolo_ros`, incluido un control negativo al cubrir la cámara. La semana 7 no queda cerrada en su totalidad: faltan evaluar calidad y calibración, repetir físicamente `DetectPeople` mediante Capabilities2 y probar de manera supervisada controladores y actuadores de movimiento.
+**Resultado aprobado para el bloque básico de acceso en NAO y Pepper:** en ambos robots se comprobaron el grafo ROS 2, publicaciones de sensores seleccionados, consultas de estado y voz real tanto directa como mediante el contrato portable cuando correspondía. Pepper añadió evidencia de cámaras frontal, inferior y de profundidad, micrófono, odometría, láser y sonares, además de un desplazamiento frontal directo de `0.1 m` bajo supervisión. NAO añadió una prueba directa de detección de personas con `yolo_ros`, incluido un control negativo al cubrir la cámara. La semana 7 no queda cerrada en su totalidad: faltan evaluar calidad y calibración, repetir físicamente `DetectPeople` mediante Capabilities2 y validar el desplazamiento mediante un contrato portable con control de concurrencia y resultado observable.
 
 El proveedor real `NaoSpeak` queda aprobado en tres escenarios: pasó 9/9 comprobaciones locales contra `/nao/say` simulado, 9/9 contra `/pepper/say` simulado mediante remapeo y las dos pruebas físicas supervisadas con NAO y Pepper. Además, la primera aplicación YASMIN completó las rutas simuladas para ambos robots, liberó la capacidad también ante ausencia del servicio y completó la ejecución física con Pepper; falta registrar esa aplicación física con NAO. `YoloDetectPeople` pasó sus doce comprobaciones simuladas y liberó tanto servicio como suscripción, pero aún no se presenta como validado físicamente. Permanecen pendientes combinar `DetectPeople` y `Speak` en YASMIN, formalizar la identidad o parametrización del proveedor de voz para Pepper, implementar las demás capacidades y resolver el fallo conocido de Capabilities2 al reportar un proveedor inexistente.
 
