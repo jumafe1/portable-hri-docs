@@ -1,5 +1,7 @@
 # Capabilities2
 
+Nota de contexto, 11 de noviembre de 2026: este documento conserva la evaluación inicial y sus límites, incluidas las 12 de 13 comprobaciones. Las pruebas físicas posteriores y la integración de nuevas capacidades se documentan en [[Semana 7 - Verificación NAO]] y [[Seguimiento NAO - pruebas con y sin Whisper]]. No se declara corregido el defecto histórico del servidor por el hecho de que los proveedores posteriores funcionen.
+
 ## Objetivo
 
 Evaluar si el núcleo de Capabilities2 permite gestionar proveedores en ROS 2 Jazzy antes de adoptarlo como dependencia de la arquitectura descrita en [[Proyecto]]. Requiere el entorno [[Docker]] y la verificación de [[ROS 2]].
@@ -90,3 +92,4 @@ El resultado estructurado conserva nueve aserciones aprobadas en `portable-hri-r
 Dos proveedores ficticios aportan evidencia de intercambio de implementaciones en software. No validan síntesis de voz, NAOqi, sensores, actuadores ni portabilidad física entre NAO y Pepper. Integrar un robot temprano una vez resuelta esta evaluación.
 
 No se validaron dependencias entre capacidades, heartbeat con peer de bond, limpieza automática al perder un cliente, cancelación de acciones prolongadas ni desaparición del servicio tras parada (se verificó la lista de runners). Estas pruebas no deben darse por realizadas.
+

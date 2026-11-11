@@ -1,6 +1,8 @@
 
 Fecha de revisión: 9 de septiembre de 2026. Estado: caracterización documental inicial, sin conexión a robots. Relacionado con [[Proyecto]], [[Docker]], [[ROS 2]] y [[Capabilities2]].
 
+Actualización de contexto, 11 de noviembre de 2026: esta nota conserva el inventario histórico y sus candidatos. La implementación y las pruebas posteriores se resumen en [[Proyecto]] y [[Seguimiento NAO - pruebas con y sin Whisper]]. Pepper está fuera de funcionamiento tras un accidente informado por el autor; las pruebas físicas actuales continúan solo con NAO. La evaluación formal de Vosk está en espera. Los pendientes de septiembre no deben interpretarse como un inventario actualizado de lo implementado.
+
 Ampliación documental: 16 de septiembre de 2026. Se incorporan MediaPipe para detección de personas y MoveIt 2 tentativamente para brazos y gestos, según aclaración del autor. Ambos son candidatos sin integración verificada; esta ampliación no incluye pruebas físicas.
 
 ## Propósito y alcance
@@ -192,3 +194,4 @@ identificar la morfologia del proveedor.... intermediario.  e identificar las li
 
 
 la entrega se hace en el one drive compartido. el 30%.
+
