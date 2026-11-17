@@ -16,17 +16,17 @@ La limitación de hardware delimita la evidencia disponible. No se presenta esta
 
 La aplicación se inicia con `aplicacion_hri.launch.py`. El driver ROS 2/NAOqi permanece como dependencia externa. El lanzamiento integrado organiza los procesos de percepción y voz; YASMIN coordina los comportamientos y Capabilities2 administra los proveedores. La aplicación consume contratos comunes, mientras los proveedores encapsulan el hardware y los motores de percepción.
 
-| Componente | Estado al 11 de noviembre de 2026 |
+| Componente | Estado al 17 de noviembre de 2026 |
 | --- | --- |
 | Contratos y proveedores | Implementados `Speak`, `DetectPeople`, `MoveRelative`, `MoveVelocity`, `OrientCamera` y `TranscribeSpeech`; la existencia del contrato no equivale a validación física de todas sus opciones. |
-| `FollowPerson` en NAO | Combina `DetectPeople` y `MoveVelocity`. El autor confirmó movimiento, parada al perder la persona o aparecer varias y recuperación al volver una detección válida. |
+| `FollowPerson` en NAO | Combina `DetectPeople` y `MoveVelocity`. El autor confirmó movimiento, parada al perder la persona o aparecer varias y recuperación al volver una detección válida. Desde el 17 de noviembre el perfil de NAO estima la cercanía con el ancho de la caja (`target_width_ratio: 0.33`) y el robot avanza a un tercio de la velocidad mientras corrige la dirección; ambos cambios se usaron en una sesión física ese día. La distancia de parada no está medida. |
 | Imágenes antiguas | El seguimiento solicita velocidad cero y espera recuperación; los cortes transitorios ya no requieren reiniciar el programa. Los errores críticos conservan una salida de fallo. |
 | Whisper | Transcripción desde el micrófono de NAO implementada y observada. Se añadieron segmentación por actividad de voz y captura continua con cola acotada. Su ejecución conjunta con YOLO y seguimiento fue medida el 4 de noviembre: elevada carga de CPU y esperas prolongadas por imágenes antiguas. |
 | Seguimiento sin Whisper | Ensayo físico medido el 4 de noviembre: mayor frecuencia de detecciones, menor antigüedad y ninguna espera registrada por imágenes antiguas en esa ejecución. |
-| Vosk y respuestas `Speak` | Alternativa implementada en la copia local de la rama de trabajo para órdenes acotadas; sus cambios aún no están publicados al consolidar esta nota. Existe una confirmación inicial del autor de reconocimiento y respuesta hablada cerca del robot. **Evaluación formal en espera por decisión del autor**; sin resultados comparativos de CPU, alcance o precisión. |
+| Vosk y respuestas `Speak` | Alternativa implementada en la copia local de la rama de trabajo para órdenes acotadas; sus cambios aún no están publicados al consolidar esta nota. Es la opción de voz por defecto del lanzamiento integrado. El 17 de noviembre una sesión física inició el seguimiento con «Nao, sígueme» y lo detuvo con «Nao, detente», con respuestas habladas. El 11 de noviembre un corte de audio dejó la voz no disponible y el robot detenido hasta relanzar; esa recuperación sigue sin implementar. **Evaluación formal en espera por decisión del autor**; sin resultados comparativos de alcance o precisión. |
 | Pepper | Pruebas previas conservadas; nuevas pruebas físicas suspendidas por indisponibilidad tras el accidente. |
 
-Las pruebas ya están en marcha. Los comandos, criterios, resultados numéricos, fallos de cierre y límites de interpretación se reúnen en [[Seguimiento NAO - pruebas con y sin Whisper]]. Esta nota distingue observación física, registros instrumentados y pruebas de software; no declara concluida toda la evaluación de la aplicación.
+Las pruebas ya están en marcha. Los comandos, criterios, resultados numéricos, fallos de cierre y límites de interpretación se reúnen en [[Seguimiento NAO - pruebas con y sin Whisper]] y, para la semana del 11 al 17 de noviembre, en [[Seguimiento NAO - órdenes de voz con Vosk y cercanía por ancho]]. Esta nota distingue observación física, registros instrumentados y pruebas de software; no declara concluida toda la evaluación de la aplicación.
 
 ## Organización de documentación y código
 
@@ -45,6 +45,7 @@ El vault mantiene tres carpetas: `01 Proyecto` para alcance y decisiones, `02 En
 
 - Continuar consolidando los ensayos en NAO y su evidencia reproducible; la repetición física actual en Pepper depende de que vuelva a estar disponible.
 - Mantener en espera la optimización de Whisper y la evaluación formal de Vosk. La comparación existente con/sin Whisper permanece como resultado del equipo y las condiciones ensayadas.
+- Medir la distancia real de parada con el objetivo de ancho 0,33 y resolver la recuperación de la sesión de voz tras un corte de audio. Los cortes de cámara y micrófono del 11 de noviembre no tienen causa identificada.
 - Fijar los commits, modelos, dependencias, perfiles y procedimiento de la versión entregable. Documentar qué contrato debe cumplir cada adaptador de otro robot.
 - Contrastar el alcance final con la propuesta aprobada, especialmente las referencias iniciales a ROS4HRI, obstáculos y gestos. Los mensajes propios de detección y la parada por pérdida visual no acreditan por sí solos ROS4HRI ni evitación de obstáculos.
 - Conservar los defectos de cierre observados como limitaciones: `Ctrl+C` puede producir `application_failed` por cancelación, una carrera `InvalidHandle` y, con Whisper, un aborto del worker. El acuse de parada y la liberación son evidencia de software; no son una medición de frenado físico.
