@@ -86,8 +86,8 @@ La propuesta inicial organizó la solución en aplicaciones HRI, orquestación, 
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=\linewidth]{arquitectura_propuesta.png}
-\caption{Separación entre aplicación, orquestación, capacidades y proveedores planteada en la propuesta original.}\label{fig:arquitectura}
+\includegraphics[width=\linewidth,interpolate]{arquitectura_propuesta.png}
+\caption{Arquitectura de la propuesta, ampliada con el Hiwonder MentorPi M1. La cuarta rama muestra cómo incorporar otra plataforma compatible.}\label{fig:arquitectura}
 \end{figure}
 
 El diseño implementado emplea YASMIN para coordinar el comportamiento y Capabilities2 para adquirir, verificar y liberar proveedores. Los contratos públicos de ROS~2 transportan las detecciones, las órdenes de velocidad y los mensajes de voz. Este reparto permite cambiar el detector o el reconocedor, y concentrar la adaptación física en los recursos declarados en el perfil del robot.
