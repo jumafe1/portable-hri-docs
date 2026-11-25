@@ -60,7 +60,7 @@ Bogotá, Colombia\par
 \section{Resumen}
 Una aplicación que sigue a una persona necesita detectar a quién seguir, decidir cómo moverse y responder cuando se le pide detenerse. Si la aplicación invoca directamente la cámara, el micrófono o la base de un robot, llevar ese comportamiento a otra plataforma obliga a revisar la lógica de interacción. Este proyecto implementó una arquitectura sobre ROS~2 en la que la aplicación consume contratos comunes, Capabilities2 administra sus proveedores y una máquina de estados YASMIN coordina la interacción.
 
-El desarrollo se evaluó en dos etapas. Primero se ejecutaron voz, detección de personas y desplazamiento relativo como funciones individuales en NAO y Pepper. Luego se integraron cuatro capacidades en un comportamiento de seguimiento por visión y voz, y se probó la aplicación completa en NAO. El 17 de noviembre, NAO pasó de la pausa al seguimiento tras «NAO, sígueme» y volvió a pausa tras «NAO, detente». En una sesión observada de 179,77~s se registraron dos órdenes aceptadas y 129,54~s en el estado de seguimiento. En el Hiwonder MentorPi, un vehículo de ruedas sin voz ni micrófono, la misma aplicación se inició con un perfil propio y procesó la imagen de su cámara en modo de observación. El movimiento de esa plataforma no llegó a verificarse. Estos resultados acreditan la reutilización de funciones individuales entre los dos humanoides y el funcionamiento conjunto en NAO, y delimitan como validación pendiente la portabilidad del comportamiento completo hacia una plataforma con un controlador distinto.
+El desarrollo se evaluó en dos etapas. Primero se ejecutaron voz, detección de personas y desplazamiento relativo como funciones individuales en NAO y Pepper. Luego se integraron cuatro capacidades en un comportamiento de seguimiento por visión y voz, y se probó la aplicación completa en NAO. En la prueba final, NAO pasó de la pausa al seguimiento tras «NAO, sígueme» y volvió a pausa tras «NAO, detente». En una sesión observada de 179,77~s se registraron dos órdenes aceptadas y 129,54~s en el estado de seguimiento. En el Hiwonder MentorPi, un vehículo de ruedas sin voz ni micrófono, la misma aplicación se inició con un perfil propio y procesó la imagen de su cámara en modo de observación. Estos resultados acreditan la reutilización de funciones individuales entre los dos humanoides y el funcionamiento conjunto en NAO, y delimitan como validación pendiente la portabilidad del comportamiento completo hacia una plataforma con un controlador distinto.
 
 \noindent\textbf{Palabras clave.} Interacción humano-robot, ROS~2, portabilidad, capacidades, seguimiento de personas, órdenes de voz.
 
@@ -82,12 +82,12 @@ Una aplicación acoplada a servicios de NAOqi o a los nombres de los tópicos de
 
 \par\medskip\noindent\textbf{Discusión de lo que debería ser la solución}\par
 
-La propuesta del 19 de agosto organizó la solución en aplicaciones HRI, orquestación, contratos comunes y adaptadores de hardware (figura~\ref{fig:arquitectura}). Planteó a NAO y Pepper como plataformas iniciales. Para cada capacidad, el contrato debe indicar qué recibe, qué entrega y cómo se distinguen un resultado normal, una espera y un fallo. Por ejemplo, una lista de personas vacía en una imagen reciente indica que se recibió información visual. La falta de una imagen reciente requiere una decisión distinta, aunque en ambos casos la base deba permanecer detenida.
+La propuesta inicial organizó la solución en aplicaciones HRI, orquestación, contratos comunes y adaptadores de hardware (figura~\ref{fig:arquitectura}). Planteó a NAO y Pepper como plataformas iniciales. Para cada capacidad, el contrato debe indicar qué recibe, qué entrega y cómo se distinguen un resultado normal, una espera y un fallo. Por ejemplo, una lista de personas vacía en una imagen reciente indica que se recibió información visual. La falta de una imagen reciente requiere una decisión distinta, aunque en ambos casos la base deba permanecer detenida.
 
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=\linewidth]{arquitectura_propuesta.png}
-\caption{Separación entre aplicación, orquestación, capacidades y proveedores planteada en la propuesta original de agosto.}\label{fig:arquitectura}
+\caption{Separación entre aplicación, orquestación, capacidades y proveedores planteada en la propuesta original.}\label{fig:arquitectura}
 \end{figure}
 
 El diseño implementado emplea YASMIN para coordinar el comportamiento y Capabilities2 para adquirir, verificar y liberar proveedores. Los contratos públicos de ROS~2 transportan las detecciones, las órdenes de velocidad y los mensajes de voz. Este reparto permite cambiar el detector o el reconocedor, y concentrar la adaptación física en los recursos declarados en el perfil del robot.
@@ -98,13 +98,13 @@ El autor agradece a Mario Fernando De la Rosa Rosero por la dirección académic
 
 \par\medskip\noindent\textbf{Diseño, implementación y resultados}\par
 
-El sistema creció desde tres modos individuales hasta un comportamiento que escucha una orden, responde, detecta una persona y regula la marcha. Se verificó la interpretación de órdenes con audio sintético y se evaluó la regla de avance con detecciones previamente registradas. El ensayo físico reunió ambos cambios en NAO. La sección~\ref{sec:implementacion} presenta ambos mecanismos y la sección~\ref{sec:validacion} reconstruye los ensayos que motivaron el cambio. Pepper aportó evidencia de las funciones individuales en septiembre. Su indisponibilidad posterior impidió repetir en él la aplicación integrada. En el Hiwonder MentorPi se verificó la cadena de percepción con un perfil sin voz, sin llegar a mover la base.
+El sistema creció desde tres modos individuales hasta un comportamiento que escucha una orden, responde, detecta una persona y regula la marcha. Se verificó la interpretación de órdenes con audio sintético y se evaluó la regla de avance con detecciones previamente registradas. El ensayo físico reunió ambos cambios en NAO. La sección~\ref{sec:implementacion} presenta ambos mecanismos y la sección~\ref{sec:validacion} reconstruye los ensayos que motivaron el cambio. Pepper aportó evidencia de las funciones individuales al inicio del proyecto. Su indisponibilidad posterior impidió repetir en él la aplicación integrada. En el Hiwonder MentorPi se verificó la cadena de percepción con un perfil sin voz.
 
 \clearpage
 \section{Descripción general}
 \subsection{Objetivos}
 
-El objetivo general y los siete objetivos específicos siguientes corresponden a la propuesta de agosto para trabajar con NAO y Pepper. La tabla~\ref{tab:objetivos} contrasta esas metas con el alcance de la evidencia al cierre.
+El objetivo general y los siete objetivos específicos siguientes corresponden a la propuesta inicial para trabajar con NAO y Pepper. La tabla~\ref{tab:objetivos} contrasta esas metas con el alcance de la evidencia al cierre.
 
 \par\medskip\noindent\textbf{Objetivo General}\par
 
@@ -142,7 +142,7 @@ N.º & Propósito & Evidencia al cierre \\
 3 & Gestión de proveedores & Adquisición, comprobación de identidad, vigilancia de comandos y liberación. Se documentaron fallos de disponibilidad y de cierre. \\
 4 & Cobertura funcional & Voz, transcripción, personas en 2D, desplazamiento relativo y velocidad continua. Orientación de cámara con verificación parcial. Navegación autónoma, obstáculos, manipulación y gestos quedaron abiertos. \\
 5 & Composición & Cuatro capacidades coordinadas físicamente en NAO. Tres funciones individuales confirmadas también en Pepper. \\
-6 & Portabilidad & Reutilización física de las operaciones individuales en NAO y Pepper. La aplicación completa se evaluó en NAO. En el Hiwonder MentorPi se verificó la percepción sin actuación. El movimiento de esa plataforma sigue pendiente. \\
+6 & Portabilidad & Reutilización física de las operaciones individuales en NAO y Pepper. La aplicación completa se evaluó en NAO. En el Hiwonder MentorPi se verificó la percepción sin actuación. \\
 7 & Reproducción y extensión & Repositorios separados, perfil YAML, vocabulario configurable, versiones identificadas y registros de ensayo. La sección~\ref{sec:implementacion} incluye una guía de nodos, tópicos y servicios, y el apéndice~\ref{ap:repro} describe la reproducción. \\
 \bottomrule
 \end{tabularx}
@@ -211,7 +211,7 @@ Morfología y locomoción & Humanoide bípedo. & Humanoide con base omnidireccio
 Cámara utilizada & Frontal, $320\times240$ píxeles. & Cámara del controlador NAOqi. & De color, $640\times480$ píxeles. \\
 Voz y audio & Síntesis de NAOqi y micrófonos. & Síntesis de NAOqi y micrófonos. & Sin voz ni micrófono en el perfil. \\
 Acceso desde ROS~2 & Controlador SinfonIA/NAOqi, recursos bajo \code{/nao}. & Controlador SinfonIA/NAOqi, recursos bajo \code{/pepper}. & Software ROS~2 del fabricante, base en \code{/cmd_vel}. \\
-Papel en el proyecto & Plataforma principal. Funciones individuales y aplicación integrada. & Segunda plataforma de las funciones individuales. Fuera de servicio desde noviembre. & Prueba de portabilidad hacia otro controlador y otra morfología. \\
+Papel en el proyecto & Plataforma principal. Funciones individuales y aplicación integrada. & Segunda plataforma de las funciones individuales. Fuera de servicio en la etapa final del proyecto. & Prueba de portabilidad hacia otro controlador y otra morfología. \\
 \bottomrule
 \end{tabularx}
 \end{table}
@@ -285,7 +285,7 @@ Se avanzó del control individual de las capacidades a una tarea que obligaba a 
 \subsection{Recolección de información}
 La caracterización inicial reunió documentación de NAOqi y SinfonIA, interfaces disponibles en ROS~2 y antecedentes académicos. En el laboratorio se contrastó ese inventario con servicios de voz y movimiento y tópicos de batería, sonar, cámara, micrófono y odometría. La disponibilidad de un tópico permitió identificar una entrada candidata. Para evaluar una función se exigió además una prueba que la utilizara.
 
-En las etapas de integración se asociaron la marca de tiempo de la imagen, el instante de recepción y la decisión del controlador. Durante las comparaciones de noviembre se añadió un observador independiente de percepción, voz y carga del sistema. Así pudo distinguirse una pausa causada por datos visuales antiguos de otra debida a indisponibilidad del micrófono.
+En las etapas de integración se asociaron la marca de tiempo de la imagen, el instante de recepción y la decisión del controlador. En la etapa final se añadió un observador independiente de percepción, voz y carga del sistema. Así pudo distinguirse una pausa causada por datos visuales antiguos de otra debida a indisponibilidad del micrófono.
 
 \subsection{Alternativas de diseño}
 \begin{table}[htbp]
@@ -403,7 +403,7 @@ Velocidad continua & \code{/nao/cmd_vel} & \code{/pepper/cmd_vel} & \code{/cmd_v
 \end{tabularx}
 \end{table}
 
-El recorrido de un dato ilustra la relación entre los tres niveles. El controlador publica la imagen de la cámara. \code{yolo_node} la procesa y publica detecciones en \code{/yolo/detections}. El proveedor \code{YoloDetectPeople} filtra las personas, conserva la marca de tiempo de la imagen y publica en \code{/hri/people}. La aplicación lee ese tópico, decide una consigna y la publica en \code{/hri/cmd_vel}. El proveedor de velocidad la limita, la vigila y la reenvía al tópico de la base del robot. En Pepper, los recursos de audio y de velocidad continua de la tabla~\ref{tab:backend} se inventariaron en septiembre, pero la aplicación no llegó a utilizarlos.
+El recorrido de un dato ilustra la relación entre los tres niveles. El controlador publica la imagen de la cámara. \code{yolo_node} la procesa y publica detecciones en \code{/yolo/detections}. El proveedor \code{YoloDetectPeople} filtra las personas, conserva la marca de tiempo de la imagen y publica en \code{/hri/people}. La aplicación lee ese tópico, decide una consigna y la publica en \code{/hri/cmd_vel}. El proveedor de velocidad la limita, la vigila y la reenvía al tópico de la base del robot. En Pepper, los recursos de audio y de velocidad continua de la tabla~\ref{tab:backend} se inventariaron en la caracterización inicial, pero la aplicación no llegó a utilizarlos.
 
 La máquina de estados de \code{follow_person} sigue un orden fijo. Primero establece el vínculo con el servidor y, si el perfil declara voz, emite el saludo. Luego adquiere \code{DetectPeople}, verifica el proveedor y configura la escucha. Si el movimiento está habilitado, adquiere \code{MoveVelocity} y espera el acuse de una orden cero. Después permanece en el estado de seguimiento hasta que el operador termina la sesión o se produce un fallo. Al salir, solicita la parada y libera las capacidades adquiridas. Además de los recursos de la tabla~\ref{tab:recursos}, la aplicación publica en \code{/hri/follow_person/preview} la decisión tomada ante cada imagen, que es la fuente del observador de diagnóstico.
 
@@ -423,10 +423,10 @@ Con el perfil de NAO se propone avance para $r<0{,}30$. Entre $0{,}30$ y $0{,}36
 \caption{Consigna de avance del perfil NAO para una detección elegible. En (a) la franja gris es la banda de cercanía. En (b) se muestra el factor que multiplica el avance de (a). Las curvas representan decisiones del controlador.}\label{fig:control}
 \end{figure}
 
-Se necesitan tres observaciones nuevas para adquirir o recuperar un objetivo. En modo de ancho, una caja que toca el borde superior o inferior conserva información horizontal utilizable. Si toca un borde lateral, el controlador pide cero en ambos ejes. Mientras falten imágenes recientes o haya cero o varias personas, la versión de noviembre conserva la sesión en espera y solicita velocidad cero. La reaparición de una persona permite reanudar un seguimiento autorizado. Una pausa solicitada por voz requiere además una nueva orden verbal. Esta regla reconoce una única detección elegible en el encuadre y no determina la identidad de quien vuelve a aparecer.
+Se necesitan tres observaciones nuevas para adquirir o recuperar un objetivo. En modo de ancho, una caja que toca el borde superior o inferior conserva información horizontal utilizable. Si toca un borde lateral, el controlador pide cero en ambos ejes. Mientras falten imágenes recientes o haya cero o varias personas, la versión final conserva la sesión en espera y solicita velocidad cero. La reaparición de una persona permite reanudar un seguimiento autorizado. Una pausa solicitada por voz requiere además una nueva orden verbal. Esta regla reconoce una única detección elegible en el encuadre y no determina la identidad de quien vuelve a aparecer.
 
 \par\medskip\noindent\textbf{Interacción por voz y ejecución integrada}\par
-La entrada \code{aplicacion_hri.launch.py} inicia la aplicación, Capabilities2, YOLO y el proceso de reconocimiento indicado en el perfil. El driver físico se inicia aparte. Por defecto, la versión del 17 de noviembre usa Vosk con un modelo pequeño en español y arranca en pausa. Una transcripción final debe coincidir con la palabra de activación y con una frase de la lista configurada, como «NAO, sígueme» o «NAO, detente». La política ignora resultados parciales, repetidos o fuera de esa lista. La síntesis de voz se hace a través de \code{Speak} y se inhibe el reconocimiento de la respuesta del propio robot durante la locución y un segundo adicional.
+La entrada \code{aplicacion_hri.launch.py} inicia la aplicación, Capabilities2, YOLO y el proceso de reconocimiento indicado en el perfil. El driver físico se inicia aparte. Por defecto, la versión final usa Vosk con un modelo pequeño en español y arranca en pausa. Una transcripción final debe coincidir con la palabra de activación y con una frase de la lista configurada, como «NAO, sígueme» o «NAO, detente». La política ignora resultados parciales, repetidos o fuera de esa lista. La síntesis de voz se hace a través de \code{Speak} y se inhibe el reconocimiento de la respuesta del propio robot durante la locución y un segundo adicional.
 
 Whisper permanece disponible para transcripción libre. Cambiar el motor de voz no cambia el contrato que consume el seguimiento. En la composición por órdenes, si se pierde el flujo de audio, el robot mantiene la pausa. La pérdida de audio por tiempo agotado en la versión evaluada requirió relanzar la aplicación para recuperar la escucha. En cambio, una interrupción visual recuperable puede resolverse en la misma sesión.
 
@@ -713,7 +713,7 @@ La arquitectura permitió construir un comportamiento que percibe, escucha, resp
 
 \par\medskip\noindent\textbf{Resultados por plataforma}\par
 
-\emph{NAO} fue la plataforma principal y reúne la evidencia más amplia. En septiembre ejecutó los tres modos individuales: voz audible, detección de personas y desplazamiento relativo contrastado con odometría, incluidos objetivos con componentes combinadas. En octubre se añadió el control continuo de la velocidad y el robot siguió físicamente a una persona. En noviembre se incorporaron la parada y la reanudación ante pérdidas de imagen o detecciones ambiguas, las órdenes de voz con vocabulario acotado y la regla de cercanía por ancho. El ensayo del 17 de noviembre integró cuatro capacidades en una sesión de 179,77~s, con dos órdenes aceptadas y 129,54~s en el estado de seguimiento.
+\emph{NAO} fue la plataforma principal y reúne la evidencia más amplia. En la primera etapa ejecutó los tres modos individuales: voz audible, detección de personas y desplazamiento relativo contrastado con odometría, incluidos objetivos con componentes combinadas. Después se añadió el control continuo de la velocidad y el robot siguió físicamente a una persona. En la etapa final se incorporaron la parada y la reanudación ante pérdidas de imagen o detecciones ambiguas, las órdenes de voz con vocabulario acotado y la regla de cercanía por ancho. El ensayo final integró cuatro capacidades en una sesión de 179,77~s, con dos órdenes aceptadas y 129,54~s en el estado de seguimiento.
 
 \emph{Pepper} aportó la primera evidencia de reutilización entre robots. Pronunció una frase a través del contrato \code{Speak} con el mismo proveedor de NAO, al que solo se le indicó otro servicio de destino. Ejecutó también los modos de detección de personas y de desplazamiento relativo de la aplicación común. En este último recorrió un objetivo de 0,5~m con una diferencia planar de 0,0016~m según su odometría. Estas pruebas mostraron que dos robots con locomoción distinta pueden compartir contrato, proveedor y aplicación cuando sus servicios tienen la misma semántica. La salida de servicio del robot impidió repetir en él el control de velocidad, el seguimiento y la interacción por voz.
 
@@ -853,7 +853,7 @@ ros2 pkg prefix hri_naoqi_providers
 \end{verbatim}
 
 \noindent\begin{minipage}{\linewidth}
-Las versiones se identifican en el apéndice~\ref{ap:fuentes}. Los dos prefijos deben corresponder a la instalación construida para la prueba. El lanzamiento que se utilizó el 17 de noviembre, con movimiento y escucha habilitados por el perfil, fue:
+Las versiones se identifican en el apéndice~\ref{ap:fuentes}. Los dos prefijos deben corresponder a la instalación construida para la prueba. El lanzamiento que se utilizó en la prueba física final, con movimiento y escucha habilitados por el perfil, fue:
 
 \begin{verbatim}
 ros2 launch hri_reference_app aplicacion_hri.launch.py \
