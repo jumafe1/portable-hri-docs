@@ -1,0 +1,37 @@
+---
+config:
+  theme: base
+  themeCSS: |
+    foreignObject div, foreignObject span, foreignObject p {
+      font-family: "Trebuchet MS", Verdana, Arial, sans-serif !important;
+    }
+  themeVariables:
+    fontFamily: trebuchet ms, verdana, arial, sans-serif
+    fontSize: 16px
+    lineColor: '#333333'
+    primaryTextColor: '#111111'
+    edgeLabelBackground: '#eaeaea'
+  flowchart:
+    curve: basis
+    htmlLabels: true
+---
+flowchart LR
+    aplicacion["Aplicación HRI<br/>código compartido"] --> orquestacion["Orquestación<br/>YASMIN o Behavior Trees"]
+    orquestacion --> capacidades["Capa común de<br/>capacidades<br/>Capabilities2: interfaces,<br/>registro y selección"]
+
+    capacidades --> provPepper["Proveedor Pepper<br/>adaptación de capacidades"]
+    capacidades --> provNAO["Proveedor NAO<br/>adaptación de capacidades"]
+    capacidades --> perfilMentorPi["Perfil del MentorPi<br/>proveedores reutilizados"]
+    capacidades --> provOtra["Proveedor de otra<br/>plataforma<br/>adaptación de capacidades"]
+
+    provPepper -->|"NAOqi / naoqi_driver2"| pepper["Pepper<br/>base móvil"]
+    provNAO -->|"NAOqi / naoqi_driver2"| nao["NAO<br/>locomoción bípeda"]
+    perfilMentorPi -->|"Controlador ROS 2<br/>/cmd_vel"| mentorpi["Hiwonder MentorPi M1<br/>base de ruedas mecanum"]
+    provOtra -->|"Driver o adaptador<br/>específico"| otra["Otra plataforma<br/>robótica compatible"]
+
+    classDef comun fill:#fff,stroke:#333,color:#111,stroke-width:1px;
+    classDef capa fill:#d9d9d9,stroke:#666,color:#111,stroke-width:1px;
+    classDef proveedor fill:#eee,stroke:#666,color:#111,stroke-width:1px;
+    class aplicacion,orquestacion,pepper,nao,mentorpi,otra comun;
+    class capacidades capa;
+    class provPepper,provNAO,perfilMentorPi,provOtra proveedor;
