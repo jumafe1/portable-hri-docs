@@ -64,6 +64,7 @@ El desarrollo se evaluó en dos etapas. Primero se ejecutaron voz, detección de
 
 \noindent\textbf{Palabras clave.} Interacción humano-robot, ROS~2, portabilidad, capacidades, seguimiento de personas, órdenes de voz.
 
+\clearpage
 \section{Introducción}
 \par\medskip\noindent\textbf{Motivación}\par
 
@@ -99,6 +100,7 @@ El autor agradece a Mario Fernando De la Rosa Rosero por la dirección académic
 
 El sistema creció desde tres modos individuales hasta un comportamiento que escucha una orden, responde, detecta una persona y regula la marcha. Se verificó la interpretación de órdenes con audio sintético y se evaluó la regla de avance con detecciones previamente registradas. El ensayo físico reunió ambos cambios en NAO. La sección~\ref{sec:implementacion} presenta ambos mecanismos y la sección~\ref{sec:validacion} reconstruye los ensayos que motivaron el cambio. Pepper aportó evidencia de las funciones individuales en septiembre. Su indisponibilidad posterior impidió repetir en él la aplicación integrada. En el Hiwonder MentorPi se verificó la cadena de percepción con un perfil sin voz, sin llegar a mover la base.
 
+\clearpage
 \section{Descripción general}
 \subsection{Objetivos}
 
@@ -248,6 +250,7 @@ La dependencia directa dificulta además distinguir errores de interacción, de 
 
 La importancia práctica del trabajo radica en reducir la duplicación y en facilitar nuevos experimentos sobre la infraestructura existente. Los beneficios económicos o de productividad son expectativas, no resultados medidos en este proyecto. La portabilidad tampoco elimina las responsabilidades de seguridad: una instrucción equivalente puede producir movimientos diferentes según el robot, su entorno y el estado de sus controladores. Por ello cada plataforma requiere su propia verificación física, aunque la aplicación sea la misma.
 
+\clearpage
 \section{Diseño y especificaciones}
 \subsection{Definición del problema}
 Dada una persona frente al robot, la aplicación debe permanecer en pausa hasta reconocer una orden de seguir, girar y avanzar con información visual reciente y volver a la pausa ante una orden de detención. La escena prevista contiene una sola persona elegible. La aplicación recibe cajas de detección en la imagen y sus marcas de tiempo. El perfil define la cámara y los límites aceptables de movimiento. La estimación de cercanía es visual y depende del campo de visión.
@@ -275,6 +278,7 @@ Cada prueba física se realizó bajo supervisión. La orden verbal de pausa form
 
 El proyecto empleó el hardware del laboratorio y software existente, sin financiación específica. La evaluación técnica no requirió conformar una base de datos de participantes. La cámara y el micrófono se procesaron durante la ejecución. El observador de la sesión final registró estados, tiempos y métricas técnicas.
 
+\clearpage
 \section{Desarrollo del diseño}
 Se avanzó del control individual de las capacidades a una tarea que obligaba a coordinarlas. El desplazamiento relativo permitió comprobar odometría y tolerancias con un objetivo fijo. Para seguir a una persona en movimiento fue necesario enviar consignas sucesivas y dejar de aplicarlas si la fuente de datos o el emisor de órdenes se perdían. El control continuo exigió, por tanto, un contrato diferente y una comprobación explícita de parada.
 
@@ -302,6 +306,7 @@ Ancho relativo de la caja & Altura relativa & En una cámara baja, el ancho pued
 \end{table}
 
 \FloatBarrier
+\clearpage
 \section{Implementación}\label{sec:implementacion}
 \subsection{Descripción de la implementación}
 
@@ -429,6 +434,7 @@ Whisper permanece disponible para transcripción libre. Cambiar el motor de voz 
 Se definieron dos criterios para evaluar la implementación. El primero fue que una persona pudiera iniciar y detener el seguimiento de NAO con la voz en una sola sesión. El segundo fue conservar la lógica de interacción al cambiar de plataforma. Para el primero se registraron transiciones, consignas y observación física. Para el segundo se examinó el código común usado en NAO y Pepper y se preparó un perfil para el Hiwonder MentorPi. La sección siguiente separa las ejecuciones efectivamente observadas de las adaptaciones que quedaron sin verificar.
 
 \FloatBarrier
+\clearpage
 \section{Validación}\label{sec:validacion}
 \subsection{Métodos}
 \begin{enumerate}
@@ -700,6 +706,7 @@ El 11 de noviembre el autor reportó que Pepper quedó fuera de servicio tras un
 Las detecciones se obtuvieron en escenas propias del laboratorio. Sin anotaciones externas, no puede calcularse la precisión o exhaustividad de YOLO. La confianza mínima filtra detecciones, pero no identifica a una persona particular. La odometría procede del sistema de control del robot. Una consigna de velocidad, un acuse de parada y una medición física son observaciones distintas. Los ensayos con y sin transcripción se hicieron consecutivamente en el mismo equipo, con cargas y escenas variables. La sesión final acredita la secuencia completa una vez. Generalizar a otras personas, cámaras, redes y plataformas requeriría nuevas repeticiones.
 
 \FloatBarrier
+\clearpage
 \section{Conclusiones}
 \subsection{Discusión}
 La arquitectura permitió construir un comportamiento que percibe, escucha, responde y se mueve sin incluir llamadas a NAOqi en la lógica de interacción. La prueba más completa conecta una petición humana con un efecto observable: el autor dio la orden de seguir, NAO avanzó y giró hacia él, y una orden posterior devolvió la aplicación a pausa dentro de la misma sesión. La voz, la detección y el desplazamiento relativo también funcionaron como operaciones independientes en los dos humanoides disponibles al inicio del proyecto.
@@ -741,6 +748,7 @@ El proyecto entrega seis contratos de capacidades, siete proveedores, una aplica
 \end{enumerate}
 
 \FloatBarrier
+\clearpage
 \renewcommand{\refname}{8. Referencias}
 \phantomsection
 \addcontentsline{toc}{section}{8. Referencias}
@@ -829,6 +837,7 @@ Registros locales · MentorPi & Resumen del observador de la sesión de observac
 \end{table}
 
 \FloatBarrier
+\clearpage
 \section{Reproducción y conservación de evidencia}\label{ap:repro}
 La \href{https://github.com/jumafe1/portable-hri-reference-system/blob/910c05faed6aa0c4b02872cb7f4f65ebf25ce669/APLICACION_HRI.md}{guía de la aplicación integrada} describe la preparación de los modelos y del entorno de Vosk. En el computador del laboratorio deben estar compiladas las versiones de interfaces, proveedores y aplicación identificadas en la tabla~\ref{tab:fuentes}. El perfil \code{hri_reference_app/config/nao.yaml} selecciona la cámara, el micrófono, la geometría de la imagen y los proveedores. El vocabulario y las respuestas están en \code{hri_reference_app/config/voice_commands.yaml}.
 
