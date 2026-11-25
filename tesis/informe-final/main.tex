@@ -44,7 +44,7 @@ Asesor\par
 {\large Mario Fernando De la Rosa Rosero\par}
 \vfill
 Bogotá, Colombia\par
-18 de noviembre de 2026\par
+25 de noviembre de 2026\par
 \end{titlepage}
 
 \pagenumbering{roman}
@@ -60,7 +60,7 @@ Bogotá, Colombia\par
 \section{Resumen}
 Una aplicación que sigue a una persona necesita detectar a quién seguir, decidir cómo moverse y responder cuando se le pide detenerse. Si la aplicación invoca directamente la cámara, el micrófono o la base de un robot, llevar ese comportamiento a otra plataforma obliga a revisar la lógica de interacción. Este proyecto implementó una arquitectura sobre ROS~2 en la que la aplicación consume contratos comunes, Capabilities2 administra sus proveedores y una máquina de estados YASMIN coordina la interacción.
 
-El desarrollo se evaluó en dos etapas. Primero se ejecutaron voz, detección de personas y desplazamiento relativo como funciones individuales en NAO y Pepper. Luego se integraron cuatro capacidades en un comportamiento de seguimiento por visión y voz, y se probó la aplicación completa en NAO. En la prueba final, NAO pasó de la pausa al seguimiento tras «NAO, sígueme» y volvió a pausa tras «NAO, detente». En una sesión observada de 179,77~s se registraron dos órdenes aceptadas y 129,54~s en el estado de seguimiento. En el Hiwonder MentorPi, un vehículo de ruedas sin voz ni micrófono, la misma aplicación se inició con un perfil propio y procesó la imagen de su cámara en modo de observación. Estos resultados acreditan la reutilización de funciones individuales entre los dos humanoides y el funcionamiento conjunto en NAO, y delimitan como validación pendiente la portabilidad del comportamiento completo hacia una plataforma con un controlador distinto.
+El desarrollo se evaluó en dos etapas. Primero se ejecutaron voz, detección de personas y desplazamiento relativo como funciones individuales en NAO y Pepper. Luego se integraron cuatro capacidades en un comportamiento de seguimiento por visión y voz, y se probó la aplicación completa en NAO. En la prueba final, NAO pasó de la pausa al seguimiento tras «NAO, sígueme» y volvió a pausa tras «NAO, detente». En una sesión observada de 179,77~s se registraron dos órdenes aceptadas y 129,54~s en el estado de seguimiento. En el Hiwonder MentorPi, un vehículo de ruedas sin voz ni micrófono, la misma aplicación siguió a una persona con un perfil propio y sin modificar la lógica de seguimiento. Estos resultados acreditan la reutilización de funciones individuales entre los dos humanoides, el funcionamiento conjunto en NAO y la portabilidad del seguimiento hacia una plataforma de otra morfología y con otro controlador.
 
 \noindent\textbf{Palabras clave.} Interacción humano-robot, ROS~2, portabilidad, capacidades, seguimiento de personas, órdenes de voz.
 
@@ -98,7 +98,7 @@ El autor agradece a Mario Fernando De la Rosa Rosero por la dirección académic
 
 \par\medskip\noindent\textbf{Diseño, implementación y resultados}\par
 
-El sistema creció desde tres modos individuales hasta un comportamiento que escucha una orden, responde, detecta una persona y regula la marcha. Se verificó la interpretación de órdenes con audio sintético y se evaluó la regla de avance con detecciones previamente registradas. El ensayo físico reunió ambos cambios en NAO. La sección~\ref{sec:implementacion} presenta ambos mecanismos y la sección~\ref{sec:validacion} reconstruye los ensayos que motivaron el cambio. Pepper aportó evidencia de las funciones individuales al inicio del proyecto. Su indisponibilidad posterior impidió repetir en él la aplicación integrada. En el Hiwonder MentorPi se verificó la cadena de percepción con un perfil sin voz.
+El sistema creció desde tres modos individuales hasta un comportamiento que escucha una orden, responde, detecta una persona y regula la marcha. Se verificó la interpretación de órdenes con audio sintético y se evaluó la regla de avance con detecciones previamente registradas. El ensayo físico reunió ambos cambios en NAO. La sección~\ref{sec:implementacion} presenta ambos mecanismos y la sección~\ref{sec:validacion} reconstruye los ensayos que motivaron el cambio. Pepper aportó evidencia de las funciones individuales al inicio del proyecto. Su indisponibilidad posterior impidió repetir en él la aplicación integrada. En el Hiwonder MentorPi, la misma aplicación siguió a una persona con un perfil sin voz.
 
 \clearpage
 \section{Descripción general}
@@ -141,8 +141,8 @@ N.º & Propósito & Evidencia al cierre \\
 2 & Separación modular & Seis contratos ROS~2, proveedores intercambiables, configuración de plataforma y aplicación Python/YASMIN. \\
 3 & Gestión de proveedores & Adquisición, comprobación de identidad, vigilancia de comandos y liberación. Se documentaron fallos de disponibilidad y de cierre. \\
 4 & Cobertura funcional & Voz, transcripción, personas en 2D, desplazamiento relativo y velocidad continua. Orientación de cámara con verificación parcial. Navegación autónoma, obstáculos, manipulación y gestos quedaron abiertos. \\
-5 & Composición & Cuatro capacidades coordinadas físicamente en NAO. Tres funciones individuales confirmadas también en Pepper. \\
-6 & Portabilidad & Reutilización física de las operaciones individuales en NAO y Pepper. La aplicación completa se evaluó en NAO. En el Hiwonder MentorPi se verificó la percepción sin actuación. \\
+5 & Composición & Cuatro capacidades coordinadas físicamente en NAO. Tres funciones individuales confirmadas también en Pepper. Detección y velocidad coordinadas en el Hiwonder MentorPi. \\
+6 & Portabilidad & Reutilización física de las operaciones individuales en NAO y Pepper. La aplicación completa se evaluó en NAO. La misma aplicación siguió a una persona en el Hiwonder MentorPi mediante un perfil propio. \\
 7 & Reproducción y extensión & Repositorios separados, perfil YAML, vocabulario configurable, versiones identificadas y registros de ensayo. La sección~\ref{sec:implementacion} incluye una guía de nodos, tópicos y servicios, y el apéndice~\ref{ap:repro} describe la reproducción. \\
 \bottomrule
 \end{tabularx}
@@ -208,10 +208,10 @@ El proyecto trabajó con tres plataformas de morfología distinta (tabla~\ref{ta
 Aspecto & NAO & Pepper & Hiwonder MentorPi~M1 \\
 \midrule
 Morfología y locomoción & Humanoide bípedo. & Humanoide con base omnidireccional de ruedas. & Vehículo con cuatro ruedas mecanum. \\
-Cámara utilizada & Frontal, $320\times240$ píxeles. & Cámara del controlador NAOqi. & De color, $640\times480$ píxeles. \\
+Cámara utilizada & Frontal, $320\times240$ píxeles. & Cámara del controlador NAOqi. & De color, $160\times120$ píxeles. \\
 Voz y audio & Síntesis de NAOqi y micrófonos. & Síntesis de NAOqi y micrófonos. & Sin voz ni micrófono en el perfil. \\
-Acceso desde ROS~2 & Controlador SinfonIA/NAOqi, recursos bajo \code{/nao}. & Controlador SinfonIA/NAOqi, recursos bajo \code{/pepper}. & Software ROS~2 del fabricante, base en \code{/cmd_vel}. \\
-Papel en el proyecto & Plataforma principal. Funciones individuales y aplicación integrada. & Segunda plataforma de las funciones individuales. Fuera de servicio en la etapa final del proyecto. & Prueba de portabilidad hacia otro controlador y otra morfología. \\
+Acceso desde ROS~2 & Controlador SinfonIA/NAOqi, recursos bajo \code{/nao}. & Controlador SinfonIA/NAOqi, recursos bajo \code{/pepper}. & Controlador ROS~2 Jazzy en un contenedor del vehículo, base en \code{/cmd_vel}. \\
+Papel en el proyecto & Plataforma principal. Funciones individuales y aplicación integrada. & Segunda plataforma de las funciones individuales. Fuera de servicio en la etapa final del proyecto. & Segunda plataforma del seguimiento, con otro controlador y otra morfología. \\
 \bottomrule
 \end{tabularx}
 \end{table}
@@ -269,7 +269,7 @@ Dada una persona frente al robot, la aplicación debe permanecer en pausa hasta 
 \par\medskip\noindent\textbf{Requerimientos no funcionales y criterios de aceptación}\par
 Los recursos específicos del robot deben poder cambiarse desde el perfil. Cada prueba debe identificar el proveedor y permitir reconstruir por qué el controlador avanzó o retuvo la base. En la configuración final, una detección con antigüedad superior a 0,75~s impide el avance. La evaluación del movimiento utiliza velocidades comandadas y observación del operador cuando no hay una medición externa.
 
-Para los modos individuales se exige el efecto correspondiente: voz audible, detección de personas en la imagen o desplazamiento relativo observado y contrastado con odometría. Los umbrales del modo de desplazamiento fueron 0,05~m de diferencia planar y 0,15~rad de diferencia angular. Para el ensayo integrado el criterio fue completar, dentro de la misma sesión física, pausa inicial, orden de seguir, seguimiento observado, orden de detenerse y vuelta a pausa. Para afirmar portabilidad del comportamiento completo se necesita repetir esa secuencia en una segunda plataforma con la misma lógica de alto nivel.
+Para los modos individuales se exige el efecto correspondiente: voz audible, detección de personas en la imagen o desplazamiento relativo observado y contrastado con odometría. Los umbrales del modo de desplazamiento fueron 0,05~m de diferencia planar y 0,15~rad de diferencia angular. Para el ensayo integrado el criterio fue completar, dentro de la misma sesión física, pausa inicial, orden de seguir, seguimiento observado, orden de detenerse y vuelta a pausa. Para afirmar portabilidad del comportamiento se necesita repetirlo en una segunda plataforma con la misma lógica de alto nivel. En una plataforma sin voz, el criterio equivalente es que el seguimiento comience al ver a una persona, que la base avance y gire hacia ella y que se detenga al perderla de vista o al terminar la sesión.
 
 \subsection{Restricciones}
 La cámara frontal de NAO entrega una vista monocular desde una posición baja. Una caja puede ocupar casi toda la altura de la imagen aun cuando la persona esté a cierta distancia. La red, la cámara del robot y la capacidad de cómputo del equipo del laboratorio afectan la antigüedad de las detecciones. Por ello, las métricas de la sesión se informan con su ventana de observación.
@@ -321,7 +321,7 @@ La figura~\ref{fig:actual} muestra qué selecciona el perfil y dónde termina la
 \begin{figure}[!htb]
 \centering
 \includegraphics[width=.90\linewidth]{arquitectura_implementada.pdf}
-\caption{Arquitectura de la aplicación integrada. Los recuadros con borde discontinuo indican adaptaciones previstas o sin verificación física completa. La rama NAO corresponde al ensayo físico completo.}\label{fig:actual}
+\caption{Arquitectura de la aplicación integrada. Los recuadros con borde discontinuo indican extensiones previstas. La rama de NAO corresponde a la aplicación completa y la del MentorPi al seguimiento sin voz.}\label{fig:actual}
 \end{figure}
 
 \par\medskip\noindent\textbf{Contratos y proveedores}\par
@@ -336,7 +336,7 @@ Capacidad & Intercambio funcional & Implementación y uso \\
 \code{Speak} & Texto e idioma en \code{/hri/speak}, con confirmación o error. & \code{NaoSpeak} adapta el servicio de voz de NAOqi. Se reutilizó en Pepper mediante remapeo. En la sesión integrada respondió a las órdenes. \\
 \code{DetectPeople} & Flujo \code{/hri/people} con marca de tiempo y cajas 2D. Un cuadro sin personas contiene una lista vacía. & \code{YoloDetectPeople} adapta las detecciones de YOLO. La aplicación consulta la calidad y la antigüedad de cada observación. \\
 \code{MoveRelative} & Objetivo planar $(x;\,y;\,\theta)$ relativo al marco inicial y estimación por odometría. & El proveedor NAOqi combina \code{move_to} y \code{odom}. Se probó como modo individual en ambos humanoides. \\
-\code{MoveVelocity} & Consignas \code{Twist} en \code{/hri/cmd_vel} y estado en \code{/hri/move_velocity/status}. & El proveedor NAOqi vigila la continuidad del emisor y de la orden. El seguimiento lo usa para avanzar, girar y pedir parada. \\
+\code{MoveVelocity} & Consignas \code{Twist} en \code{/hri/cmd_vel} y estado en \code{/hri/move_velocity/status}. & El proveedor NAOqi vigila la continuidad del emisor y de la orden. El seguimiento lo usa para avanzar, girar y pedir parada. Se reutilizó en el MentorPi mediante remapeo. \\
 \code{TranscribeSpeech} & Audio procesado por el proveedor, estado de captura y texto reconocido para la aplicación. & Se implementaron proveedores para Whisper y Vosk. Vosk reconoció el vocabulario de órdenes de la prueba final. \\
 \code{OrientCamera} & Solicitud de orientación e información de estado. & Proveedor opcional para el movimiento de cabeza. Verificado con interfaces simuladas y desactivado en el ensayo final. \\
 \bottomrule
@@ -407,15 +407,15 @@ El recorrido de un dato ilustra la relación entre los tres niveles. El controla
 
 La máquina de estados de \code{follow_person} sigue un orden fijo. Primero establece el vínculo con el servidor y, si el perfil declara voz, emite el saludo. Luego adquiere \code{DetectPeople}, verifica el proveedor y configura la escucha. Si el movimiento está habilitado, adquiere \code{MoveVelocity} y espera el acuse de una orden cero. Después permanece en el estado de seguimiento hasta que el operador termina la sesión o se produce un fallo. Al salir, solicita la parada y libera las capacidades adquiridas. Además de los recursos de la tabla~\ref{tab:recursos}, la aplicación publica en \code{/hri/follow_person/preview} la decisión tomada ante cada imagen, que es la fuente del observador de diagnóstico.
 
-Para incorporar otro robot se escribe un perfil en \code{hri_reference_app/config} con la geometría de su cámara, los proveedores elegidos y los recursos de la tabla~\ref{tab:backend}. Solo se requiere un proveedor nuevo cuando ninguno de los existentes puede traducir el contrato a la interfaz del robot.
+Para incorporar otro robot se escribe un perfil en \code{hri_reference_app/config} con la geometría de su cámara, los proveedores elegidos, los límites de velocidad y los recursos de la tabla~\ref{tab:backend}. Solo se requiere un proveedor nuevo cuando ninguno de los existentes puede traducir el contrato a la interfaz del robot.
 
 \par\medskip\noindent\textbf{Dos recorridos de movimiento}\par
-El modo individual \code{move_relative} recibe una posición y un ángulo. Dado que el servicio \code{MoveTo} del driver devuelve una respuesta vacía, el proveedor compara el estado inicial y final por odometría antes de informar el cumplimiento. El modo \code{follow_person} necesita reaccionar a cada detección, por lo que usa la capacidad independiente \code{MoveVelocity}. Al activar el control continuo, la aplicación envía ceros y espera un acuse nuevo. El proveedor limita las órdenes y exige una fuente válida de comandos. Ante pérdida de autorización o conflicto de emisores, la aplicación solicita una parada y libera sus recursos.
+El modo individual \code{move_relative} recibe una posición y un ángulo. Dado que el servicio \code{MoveTo} del driver devuelve una respuesta vacía, el proveedor compara el estado inicial y final por odometría antes de informar el cumplimiento. El modo \code{follow_person} necesita reaccionar a cada detección, por lo que usa la capacidad independiente \code{MoveVelocity}. Al activar el control continuo, la aplicación envía ceros y espera un acuse nuevo. El proveedor limita las órdenes al tope declarado para el robot y exige una fuente válida de comandos. Ante pérdida de autorización o conflicto de emisores, la aplicación solicita una parada y libera sus recursos.
 
 \par\medskip\noindent\textbf{Regla de seguimiento visual}\par
 Sea $W$ el ancho de la imagen, $w$ el ancho de la caja de la persona y $u$ su coordenada horizontal central en píxeles. La cercanía aparente se expresa mediante $r=w/W$, y el error horizontal normalizado mediante $e=(u-W/2)/(W/2)$. El primero regula el avance y el segundo el giro. El controlador acepta como candidatas las detecciones de personas de YOLO con una puntuación de confianza de al menos 0,65. El valor de referencia $r=0{,}33$ indica la fracción del ancho que ocupa una caja, aproximadamente 106 píxeles en una imagen de 320. Cada parámetro responde por tanto a una pregunta diferente.
 
-Con el perfil de NAO se propone avance para $r<0{,}30$. Entre $0{,}30$ y $0{,}36$ se retiene el avance y se permite corregir el giro. Por encima de esa banda también se retiene el avance. Cuando la persona está centrada, la consigna alcanza un máximo de 0,10~m/s para $r\leq 0{,}18$. El controlador reduce esa consigna hasta un tercio a medida que el centro de la persona se aparta entre 24 y 60~px del centro de la imagen de 320~px. El giro se limita a $0{,}10$~rad/s en magnitud. La figura~\ref{fig:control} separa los dos efectos para mostrar por qué NAO puede corregir el rumbo mientras avanza despacio.
+Con el perfil de NAO se propone avance para $r<0{,}30$. Entre $0{,}30$ y $0{,}36$ se retiene el avance y se permite corregir el giro. Por encima de esa banda también se retiene el avance. Cuando la persona está centrada, la consigna alcanza un máximo de 0,10~m/s para $r\leq 0{,}18$. El controlador reduce esa consigna hasta un tercio a medida que el centro de la persona se aparta entre 24 y 60~px del centro de la imagen de 320~px. El giro se limita a $0{,}10$~rad/s en magnitud. Los dos límites pertenecen al perfil del robot y el controlador escala su respuesta con ellos: el perfil del MentorPi declara 0,30~m/s y 0,40~rad/s. La figura~\ref{fig:control} separa los dos efectos para mostrar por qué NAO puede corregir el rumbo mientras avanza despacio.
 
 \begin{figure}[htbp]
 \centering
@@ -431,7 +431,7 @@ La entrada \code{aplicacion_hri.launch.py} inicia la aplicación, Capabilities2,
 Whisper permanece disponible para transcripción libre. Cambiar el motor de voz no cambia el contrato que consume el seguimiento. En la composición por órdenes, si se pierde el flujo de audio, el robot mantiene la pausa. La pérdida de audio por tiempo agotado en la versión evaluada requirió relanzar la aplicación para recuperar la escucha. En cambio, una interrupción visual recuperable puede resolverse en la misma sesión.
 
 \subsection{Resultados esperados}
-Se definieron dos criterios para evaluar la implementación. El primero fue que una persona pudiera iniciar y detener el seguimiento de NAO con la voz en una sola sesión. El segundo fue conservar la lógica de interacción al cambiar de plataforma. Para el primero se registraron transiciones, consignas y observación física. Para el segundo se examinó el código común usado en NAO y Pepper y se preparó un perfil para el Hiwonder MentorPi. La sección siguiente separa las ejecuciones efectivamente observadas de las adaptaciones que quedaron sin verificar.
+Se definieron dos criterios para evaluar la implementación. El primero fue que una persona pudiera iniciar y detener el seguimiento de NAO con la voz en una sola sesión. El segundo fue conservar la lógica de interacción al cambiar de plataforma. Para el primero se registraron transiciones, consignas y observación física. Para el segundo se examinó el código común usado en NAO y Pepper y se ejecutó la aplicación en el Hiwonder MentorPi con un perfil propio. La sección siguiente presenta las ejecuciones observadas y su alcance.
 
 \FloatBarrier
 \clearpage
@@ -468,7 +468,8 @@ Semana 11, 19 y 21 de octubre & Seguimiento con y sin actuación, velocidad conf
 25 de octubre & Protocolo de gestión de datos y almacenamiento del proyecto. Hito documental. \\
 4 de noviembre & Recuperación ante interrupciones de imagen y detecciones ambiguas. Ensayos físicos comparativos con Whisper y sin escucha. \\
 11 de noviembre & Pruebas de órdenes con Vosk, diagnóstico de interrupciones de audio y cámara, y comparación de la política de recepción de imágenes. \\
-17 de noviembre & Revisión de la regla de avance y prueba física completa en NAO, desde «sígueme» hasta «detente». \\
+17 de noviembre & Revisión de la regla de avance y prueba física completa en NAO, desde «sígueme» hasta «detente». Primera ejecución con el perfil del MentorPi, sin actuación. \\
+25 de noviembre & Seguimiento físico de una persona en el Hiwonder MentorPi y límites de velocidad por robot. \\
 \bottomrule
 \end{tabularx}
 \end{table}
@@ -675,26 +676,40 @@ La secuencia documenta un ciclo completo de interacción en un NAO físico. El t
 
 \par\medskip\noindent\textbf{17 de noviembre. Cadena de percepción en el Hiwonder MentorPi}\par
 
-Para incorporar el vehículo se escribió el perfil \code{mentorpi.yaml}. Este declara la cámara de color de $640\times480$ píxeles y el tópico de velocidad de la base, y omite los proveedores de voz y de escucha. El lanzamiento se amplió para aceptar un perfil sin esos dos grupos: en ese caso desactiva el saludo, la transcripción y las órdenes de voz, y el seguimiento comienza sin esperar una orden. La lógica de seguimiento, los contratos y los proveedores de detección y de velocidad no se modificaron. El perfil redirige el recurso de velocidad del proveedor hacia el tópico \code{/cmd_vel} del vehículo.
+Para incorporar el vehículo se escribió el perfil \code{mentorpi.yaml}. En esa fecha el vehículo ejecutaba su software de fábrica. El perfil declaraba la cámara de color de $640\times480$ píxeles y el tópico de velocidad de la base, y omitía los proveedores de voz y de escucha. El lanzamiento se amplió para aceptar un perfil sin esos dos grupos: en ese caso desactiva el saludo, la transcripción y las órdenes de voz, y el seguimiento comienza sin esperar una orden. La lógica de seguimiento, los contratos y los proveedores de detección y de velocidad no se modificaron. El perfil redirige el recurso de velocidad del proveedor hacia el tópico \code{/cmd_vel} del vehículo.
 
 La primera ejecución mostró una diferencia de plataforma ajena a la aplicación. La imagen sin comprimir del vehículo no llegó a tiempo por su red inalámbrica: en dos ventanas de 12~s se recibieron entre 0,2 y 0,3 imágenes por segundo, con una antigüedad mediana de 2,0 a 2,3~s, por encima del límite de 0,75~s. La aplicación retuvo la base, como exige el criterio de información reciente. Se añadió entonces un paso de compresión JPEG en el vehículo y de descompresión en el computador, que conserva la marca de tiempo original de cada imagen. Fue necesario además sincronizar el reloj del vehículo con el del computador al inicio de cada sesión, porque la antigüedad se calcula con ambas referencias.
 
 Con esos ajustes se ejecutó una sesión de observación de 54,3~s con la actuación desactivada. El observador registró 467 mensajes de percepción, 9,26~Hz en los últimos 30~s y una antigüedad de 0,26~s en el percentil 95. La aplicación permaneció 39,2~s en el estado de seguimiento en vista previa y 0,6~s esperando imágenes recientes. La cadena formada por la cámara, el detector, el contrato \code{DetectPeople} y la regla de seguimiento funcionó así con una cámara, una resolución y una red distintas de las de NAO.
 
-El movimiento de la base no se verificó. En los intentos con la actuación habilitada, la aplicación terminó antes de enviar consignas porque el proveedor de velocidad informó que no encontraba el receptor de la base. En consecuencia, no hay evidencia sobre el sentido de avance, las unidades de la consigna ni la parada del vehículo. El perfil y los cambios del lanzamiento se conservan en el espacio de trabajo del laboratorio y no forman parte de la versión publicada \texttt{910c05f}.
+En esa fecha no se logró mover la base: en los intentos con la actuación habilitada, la aplicación terminó antes de enviar consignas porque el proveedor de velocidad no encontraba el receptor de la base.
+
+\par\medskip\noindent\textbf{25 de noviembre. Seguimiento físico en el Hiwonder MentorPi}\par
+
+El vehículo se inició con su controlador ROS~2 Jazzy, que se ejecuta en un contenedor y publica una imagen de color de $160\times120$ píxeles. Con ese tamaño la imagen cruza la red inalámbrica sin compresión: en una medición de 10~s se recibieron 12,2 imágenes por segundo con una antigüedad mediana de 0,04~s. El perfil se ajustó a esa cámara y dejó de requerir el paso de compresión. La lógica de seguimiento, los contratos y los proveedores permanecieron iguales.
+
+En la primera sesión con actuación, de 73,6~s, la aplicación usó los mismos límites de velocidad que en NAO. El observador registró 650 mensajes de percepción, 9,91~Hz en los últimos 30~s, una antigüedad de 0,24~s en el percentil 95 y ninguna espera por imágenes antiguas. La puntuación mediana de las detecciones fue 0,85. El operador se situó frente al vehículo y confirmó que este avanzó hacia él, giró hacia el lado correcto y se detuvo al terminar la sesión con \code{Ctrl+C}. La aplicación permaneció 26,1~s en el estado de seguimiento, ordenó velocidad cero cuando la persona estuvo cerca o salió del encuadre y la recuperó catorce veces. La consigna de avance tuvo una mediana de 0,047~m/s y un máximo de 0,084~m/s. El operador describió el desplazamiento como demasiado lento para una base de ruedas.
+
+Esa observación motivó una generalización. Los límites de avance y de giro pasaron a declararse en el perfil de cada robot, con un techo absoluto en el código de 0,30~m/s y 0,40~rad/s. El perfil de NAO conserva 0,10~m/s y 0,10~rad/s, y el del MentorPi declara los valores del techo. El proveedor de velocidad recibe el mismo límite y rechaza las órdenes que lo superan. Tras el cambio se aprobaron 63 pruebas del controlador y 229 de sesión, lanzamiento y diagnóstico. La prueba simulada del proveedor aprobó sus 24 comprobaciones con los límites de NAO y con los del vehículo.
+
+En una segunda sesión, de 27,4~s y con los límites nuevos, se registraron 211 mensajes de percepción a 10,19~Hz y una antigüedad de 0,22~s en el percentil 95. La consigna de avance tuvo una mediana de 0,101~m/s y un máximo de 0,143~m/s, y la de giro alcanzó 0,40~rad/s. El operador confirmó de nuevo el seguimiento.
+
+Entre ambas sesiones, tres intentos terminaron sin movimiento. Una medición independiente de la imagen dio en ese momento 7,3 imágenes por segundo, con una antigüedad mediana de 0,46~s y máxima de 1,40~s. Durante esos intentos la antigüedad de las imágenes creció hasta superar el límite de 0,75~s, el proveedor dejó de ver el receptor de la base y la aplicación terminó sin haber enviado ninguna consigna distinta de cero. El operador atribuyó la falla a la distancia entre el computador y el vehículo. Al acercarlos, la medición volvió a ser favorable y la sesión siguiente funcionó. El episodio muestra que la aplicación retiene la base cuando la información deja de ser reciente, también en esta plataforma.
+
+Estas sesiones acreditan que la aplicación de seguimiento se ejecuta en un robot de otra morfología y con otro controlador sin modificar su lógica. La adaptación consistió en un perfil y en dos generalizaciones del código común: los grupos opcionales de voz en el lanzamiento y los límites de velocidad por robot. El proveedor de velocidad escrito para NAOqi se reutilizó, porque solo requiere un tópico de velocidad en la base. No se midieron la distancia de parada en metros ni el comportamiento del vehículo ante una pérdida total de la comunicación.
 
 \FloatBarrier
 \par\medskip\noindent\textbf{Alcance de la evidencia por plataforma}\par
 La tabla~\ref{tab:plataformas} resume qué se observó físicamente en cada robot.
 \begin{table}[htbp]
 \centering\small
-\caption{Validación física alcanzada por plataforma al 18 de noviembre.}\label{tab:plataformas}
+\caption{Validación física alcanzada por plataforma al 25 de noviembre.}\label{tab:plataformas}
 \begin{tabularx}{\linewidth}{@{}P{3.5cm}YYY@{}}
 \toprule
 Función & NAO & Pepper & Hiwonder MentorPi \\
 \midrule
 Voz, detección y desplazamiento relativo por separado & Confirmados en septiembre. & Confirmados en septiembre. & Detección observada mediante el contrato común. Voz no disponible. \\
-Velocidad continua y seguimiento visual & Marcha, parada y recuperación observadas. & Sin ensayo físico documentado de seguimiento. & Decisiones de seguimiento observadas sin actuación. Movimiento sin verificar. \\
+Velocidad continua y seguimiento visual & Marcha, parada y recuperación observadas. & Sin ensayo físico documentado de seguimiento. & Seguimiento físico observado, con parada al terminar la sesión. \\
 Seguimiento y parada por voz en la misma sesión & Ensayo completo del 17 de noviembre. & Sin repetición de la sesión integrada. & No aplica: el perfil no declara voz. \\
 \bottomrule
 \end{tabularx}
@@ -703,7 +718,7 @@ Seguimiento y parada por voz en la misma sesión & Ensayo completo del 17 de nov
 El 11 de noviembre el autor reportó que Pepper quedó fuera de servicio tras un accidente. La indisponibilidad limitó las repeticiones posteriores. Los ensayos de septiembre conservan su valor para los modos que se ejecutaron allí. No permiten inferir cómo habría respondido Pepper a la política de voz y recuperación de noviembre.
 
 \par\medskip\noindent\textbf{Fuentes de incertidumbre}\par
-Las detecciones se obtuvieron en escenas propias del laboratorio. Sin anotaciones externas, no puede calcularse la precisión o exhaustividad de YOLO. La confianza mínima filtra detecciones, pero no identifica a una persona particular. La odometría procede del sistema de control del robot. Una consigna de velocidad, un acuse de parada y una medición física son observaciones distintas. Los ensayos con y sin transcripción se hicieron consecutivamente en el mismo equipo, con cargas y escenas variables. La sesión final acredita la secuencia completa una vez. Generalizar a otras personas, cámaras, redes y plataformas requeriría nuevas repeticiones.
+Las detecciones se obtuvieron en escenas propias del laboratorio. Sin anotaciones externas, no puede calcularse la precisión o exhaustividad de YOLO. La confianza mínima filtra detecciones, pero no identifica a una persona particular. La odometría procede del sistema de control del robot. Una consigna de velocidad, un acuse de parada y una medición física son observaciones distintas. Los ensayos con y sin transcripción se hicieron consecutivamente en el mismo equipo, con cargas y escenas variables. La sesión final acredita la secuencia completa una vez. Las dos sesiones con movimiento del MentorPi fueron breves y con un solo operador. Generalizar a otras personas, cámaras, redes y plataformas requeriría nuevas repeticiones.
 
 \FloatBarrier
 \clearpage
@@ -717,17 +732,17 @@ La arquitectura permitió construir un comportamiento que percibe, escucha, resp
 
 \emph{Pepper} aportó la primera evidencia de reutilización entre robots. Pronunció una frase a través del contrato \code{Speak} con el mismo proveedor de NAO, al que solo se le indicó otro servicio de destino. Ejecutó también los modos de detección de personas y de desplazamiento relativo de la aplicación común. En este último recorrió un objetivo de 0,5~m con una diferencia planar de 0,0016~m según su odometría. Estas pruebas mostraron que dos robots con locomoción distinta pueden compartir contrato, proveedor y aplicación cuando sus servicios tienen la misma semántica. La salida de servicio del robot impidió repetir en él el control de velocidad, el seguimiento y la interacción por voz.
 
-El \emph{Hiwonder MentorPi} permitió examinar la arquitectura frente a un robot que no pertenece al ecosistema NAOqi y que carece de voz. La aplicación se inició con un perfil propio, sin cambios en la lógica de seguimiento, y procesó la imagen del vehículo hasta producir decisiones de seguimiento en modo de observación. Para ello bastaron un perfil, la posibilidad de omitir las capacidades de voz y un paso de compresión de imagen exigido por la red del vehículo. El movimiento de la base no se verificó, por lo que este resultado acredita la portabilidad de la percepción y de la decisión, pero no la de la actuación.
+El \emph{Hiwonder MentorPi} permitió examinar la arquitectura frente a un robot que no pertenece al ecosistema NAOqi, que se desplaza sobre ruedas y que carece de voz. La misma aplicación siguió a una persona en él: el vehículo avanzó hacia el operador, giró hacia su lado y se detuvo al terminar la sesión. La lógica de seguimiento, los contratos y los proveedores de detección y de velocidad no se modificaron. La adaptación consistió en un perfil con la cámara, la base y los límites del vehículo, y en dos generalizaciones del código común: la posibilidad de omitir las capacidades de voz y la declaración de los límites de velocidad por robot. Este resultado extiende la portabilidad de la percepción y de la decisión a la actuación.
 
 \par\medskip\noindent\textbf{Alcance de la portabilidad}\par
 
-La portabilidad tiene, por tanto, tres alcances en estos resultados. Entre NAO y Pepper se reutilizaron contratos y proveedores compatibles mediante configuración. En NAO se probó además la composición de cuatro capacidades. En el MentorPi se comprobó que la aplicación acepta una plataforma con otra cámara, otro controlador y menos capacidades, hasta el punto de decidir consignas. Que el código admita un perfil distinto muestra dónde se realiza la adaptación. La afirmación de que el comportamiento completo es portable requiere todavía observar el seguimiento y la parada en una segunda plataforma.
+La portabilidad tiene, por tanto, tres alcances en estos resultados. Entre NAO y Pepper se reutilizaron contratos y proveedores compatibles mediante configuración. En NAO se probó además la composición de cuatro capacidades. En el MentorPi, la aplicación de seguimiento funcionó en una plataforma con otra cámara, otro controlador, otra locomoción y menos capacidades. El criterio planteado al inicio, ejecutar la misma aplicación de alto nivel en más de un robot cambiando solo lo específico de cada plataforma, se cumplió para el seguimiento entre un humanoide bípedo y un vehículo de ruedas. El ciclo completo con órdenes de voz se observó en NAO, porque el vehículo no dispone de voz ni de micrófono.
 
-El perfil cumplió la función que la propuesta asignaba a la descripción de capacidades por robot. La arquitectura no detecta la morfología de forma automática: el perfil la declara. Un robot sin voz se describe omitiendo esas capacidades, y la aplicación ajusta su comportamiento a lo declarado. Esta decisión mantiene explícito qué puede hacer cada plataforma y evita que la aplicación suponga recursos inexistentes.
+El perfil cumplió la función que la propuesta asignaba a la descripción de capacidades por robot. La arquitectura no detecta la morfología de forma automática: el perfil la declara. Un robot sin voz se describe omitiendo esas capacidades, una base más rápida declara sus propios límites, y la aplicación ajusta su comportamiento a lo declarado. Esta decisión mantiene explícito qué puede hacer cada plataforma y evita que la aplicación suponga recursos inexistentes.
 
 \par\medskip\noindent\textbf{Lecciones de los fallos}\par
 
-Los fallos orientaron decisiones concretas. El movimiento relativo mostró el valor de comprobar el efecto por odometría. La pérdida de imagen motivó una pausa recuperable. Los episodios con Whisper y con pérdida simultánea de audio y cámara mostraron que dos pausas visualmente similares pueden tener causas distintas. El recorte vertical de las detecciones de NAO llevó a cambiar la regla de avance. El controlador selecciona la magnitud visual por perfil, lo que permite adecuarla a la posición y al campo de visión de otra cámara. Finalmente, el vehículo mostró que el criterio de información reciente depende de condiciones externas a la aplicación, como la capacidad de la red y la sincronización de los relojes. En todos los casos la aplicación respondió reteniendo la base, que es el comportamiento seguro previsto.
+Los fallos orientaron decisiones concretas. El movimiento relativo mostró el valor de comprobar el efecto por odometría. La pérdida de imagen motivó una pausa recuperable. Los episodios con Whisper y con pérdida simultánea de audio y cámara mostraron que dos pausas visualmente similares pueden tener causas distintas. El recorte vertical de las detecciones de NAO llevó a cambiar la regla de avance. El controlador selecciona la magnitud visual por perfil, lo que permite adecuarla a la posición y al campo de visión de otra cámara. Finalmente, el vehículo mostró que el criterio de información reciente depende de condiciones externas a la aplicación, como la capacidad de la red, la distancia al punto de acceso y la sincronización de los relojes. En todos los casos la aplicación respondió reteniendo la base, que es el comportamiento seguro previsto.
 
 \par\medskip\noindent\textbf{Utilidad y proyección de los robots de servicio}\par
 
@@ -743,7 +758,7 @@ El proyecto entrega seis contratos de capacidades, siete proveedores, una aplica
 
 \subsection{Trabajo futuro}
 \begin{enumerate}
-\item \textbf{Completar la portabilidad en el Hiwonder MentorPi.} Resolver la comunicación entre el proveedor \code{MoveVelocity} y la base del vehículo, y verificar con las ruedas elevadas el sentido de avance, las unidades de la consigna y la parada al cesar las órdenes. Calibrar después el perfil visual y ejecutar el mismo protocolo de seguimiento y parada que en NAO, indicando qué componentes se reutilizaron y cuáles fue necesario adaptar.
+\item \textbf{Caracterizar el seguimiento en el Hiwonder MentorPi.} Calibrar el perfil visual del vehículo y verificar su parada ante una pérdida total de la comunicación, incorporando una vigilancia en el propio robot si fuera necesaria. Dar al proveedor de velocidad un nombre independiente de NAOqi, puesto que ya se emplea en una base distinta. Añadir altavoz y micrófono al vehículo permitiría repetir en él el ciclo completo con órdenes de voz.
 \item \textbf{Evaluar recuperación y extensiones.} Probar recuperación automática tras cortes de audio, cierre limpio ante cancelación y orientación de cámara con estado articular reciente. La navegación con obstáculos, la manipulación y los gestos siguen siendo extensiones del catálogo propuesto.
 \end{enumerate}
 
@@ -827,11 +842,11 @@ Fuente & Contenido utilizado \\
 \midrule
 Propuesta y bitácoras & Propuesta del 19 de agosto, avance del 27 de septiembre, notas de semanas 6, 7, 8 y 11 y registro de velocidad del 14 de octubre. \\
 \href{https://github.com/jumafe1/portable-hri-interfaces/tree/113dc9752113749ba2252f59d3f0fbeeccbde5a7}{Interfaces · \texttt{113dc97}} & Descripción de seis capacidades, mensajes y servicios. \\
-\href{https://github.com/jumafe1/portable-hri-providers/tree/360065ec60e5b8e602dea608ecc66dec8b6e1f52}{Proveedores · \texttt{360065e}} & Adaptadores NAOqi, detección con YOLO y proveedores de voz de Vosk y Whisper. \\
-\href{https://github.com/jumafe1/portable-hri-reference-system/tree/910c05faed6aa0c4b02872cb7f4f65ebf25ce669}{Sistema · \texttt{910c05f}} & Aplicación, perfil NAO, política de órdenes, pruebas y resultados. La rama \code{perf/whisper-follow-cpu} conserva la sesión con Vosk y control por ancho. \\
+\href{https://github.com/jumafe1/portable-hri-providers/tree/a620d692f6a26f2d8355c4912bfd5ae6915c4b8b}{Proveedores · \texttt{a620d69}} & Adaptadores NAOqi, detección con YOLO y proveedores de voz de Vosk y Whisper. \\
+\href{https://github.com/jumafe1/portable-hri-reference-system/tree/36d15ae19070a4dab487089e9ee80399f8a9a398}{Sistema · \texttt{36d15ae}} & Aplicación, perfiles de NAO y del MentorPi, política de órdenes, pruebas y resultados. La rama \code{perf/whisper-follow-cpu} conserva la sesión con Vosk y control por ancho. \\
 \href{https://github.com/jumafe1/portable-hri-docs/tree/95d141fb41f1b144b6ff70ff9993794293875940}{Bitácoras · \texttt{95d141f}} & Ensayos del 4, 11 y 17 de noviembre y referencia a la indisponibilidad de Pepper. \\
 \href{https://github.com/jumafe1/portable-hri-reference-system/blob/910c05faed6aa0c4b02872cb7f4f65ebf25ce669/results/follow_width_voice_20261117.json}{Sesión física · 17 de noviembre} & Configuración, cronología, tiempos por estado, uso de CPU, observación del autor y huellas de los archivos de diagnóstico locales. \\
-Registros locales · MentorPi & Resumen del observador de la sesión de observación del 17 de noviembre y mediciones de recepción de imagen del vehículo, conservados en el computador del laboratorio. \\
+\href{https://github.com/jumafe1/portable-hri-reference-system/blob/36d15ae19070a4dab487089e9ee80399f8a9a398/results/follow_mentorpi_20261125.json}{Sesiones físicas · MentorPi} & Configuración, mediciones de recepción de imagen, tiempos por estado, consignas, observación del autor y huellas de los archivos de diagnóstico locales de las sesiones del 25 de noviembre. \\
 \bottomrule
 \end{tabularx}
 \end{table}
@@ -861,7 +876,7 @@ ros2 launch hri_reference_app aplicacion_hri.launch.py \
 \end{verbatim}
 \end{minipage}
 
-Este lanzamiento inicia los procesos de visión y reconocimiento configurados. Con la aplicación inicialmente en pausa, el operador se situó frente a la cámara, dio la orden «NAO, sígueme», se desplazó dentro del campo de visión y pronunció «NAO, detente». Tras comprobar la pausa física y de la aplicación, terminó la ejecución con \code{Ctrl+C}. Para verificar percepción y voz sin habilitar la base puede usarse el mismo lanzamiento con \code{enable_motion:=false}.
+Este lanzamiento inicia los procesos de visión y reconocimiento configurados. Con la aplicación inicialmente en pausa, el operador se situó frente a la cámara, dio la orden «NAO, sígueme», se desplazó dentro del campo de visión y pronunció «NAO, detente». Tras comprobar la pausa física y de la aplicación, terminó la ejecución con \code{Ctrl+C}. Para verificar percepción y voz sin habilitar la base puede usarse el mismo lanzamiento con \code{enable_motion:=false}. Para el Hiwonder MentorPi se inicia primero el controlador del vehículo y se añade \code{robot:=mentorpi} al mismo lanzamiento.
 
 La entrada \code{hri_app.launch.py} se conserva para repetir un modo individual, por ejemplo \code{mode:=detect_people}. El lanzamiento integrado permite también desactivar la escucha mediante \code{transcribe_speech:=false} o seleccionar transcripción libre con \code{speech_backend:=whisper} y \code{voice_commands:=false}.
 
